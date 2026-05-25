@@ -1,48 +1,21 @@
-const CACHE_NAME = 'random-picker-v3';
-const urlsToCache = [
-    '.',
-    'index.html',
-    'manifest.json',
-    'icon.png'
-];
+// 自动清理旧版本数据
+localStorage.removeItem('randomPickerData');
 
-// 安装
-self.addEventListener('install', event => {
-    event.waitUntil(
-        caches.open(CACHE_NAME)
-            .then(cache => cache.addAll(urlsToCache))
-    );
-    // 立即激活
-    self.skipWaiting();
-});
+// 从本地存储读取
+let data = null;
+try {
+    const raw = localStorage.getItem('randomPickerDataV2');
+    if (raw) {
+        const parsed = JSON.parse(raw);
+        // 验证数据格式是否正确
+        const firstCat = Object.keys(parsed)[0];
+        if (parsed[firstCat].length > 0 && typeof parsed[firstCat][0] === 'object' && parsed[firstCat][0].name !== undefined) {
+            data = parsed;
+        }
+    }
+} catch(e) {}
 
-// 激活时清理旧缓存
-self.addEventListener('activate', event => {
-    event.waitUntil(
-        caches.keys().then(cacheNames => {
-            return Promise.all(
-                cacheNames.filter(name => name !== CACHE_NAME)
-                    .map(name => caches.delete(name))
-            );
-        })
-    );
-    self.clients.claim();
-});
-
-// 网络优先，失败时用缓存
-self.addEventListener('fetch', event => {
-    event.respondWith(
-        fetch(event.request)
-            .then(response => {
-                // 更新缓存
-                const responseClone = response.clone();
-                caches.open(CACHE_NAME).then(cache => {
-                    cache.put(event.request, responseClone);
-                });
-                return response;
-            })
-            .catch(() => {
-                return caches.match(event.request);
-            })
-    );
-});
+if (!data) {
+    data = JSON.parse(JSON.stringify(defaultData));
+    saveData();
+}
