@@ -3,12 +3,12 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes, viewport-fit=cover">
-  <title>共享随机选择器 · 一起决定</title>
-  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#4A90D9">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-  <meta name="apple-mobile-web-app-title" content="随机选">
-  <link rel="apple-touch-icon" href="icon.png">
+  <meta name="apple-mobile-web-app-title" content="随机选择器">
+  <link rel="manifest" href="data:application/manifest+json,{"name":"随机选择器","short_name":"选择器","start_url":".","display":"standalone","background_color":"#f5f5f5","theme_color":"#4A90D9","icons":[{"src":"data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🎲</text></svg>","sizes":"any","type":"image/svg+xml"}]}">
+  <title>🍽️ 随机选择器 - PWA</title>
   <style>
     * {
       margin: 0;
@@ -17,889 +17,1019 @@
     }
 
     body {
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-      background: linear-gradient(145deg, #5f6af0 0%, #7b4ca8 100%);
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
       min-height: 100vh;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      padding: 20px;
-      margin: 0;
+      padding: 16px;
+      color: #333;
     }
 
     .container {
-      background: rgba(255, 255, 255, 0.96);
-      backdrop-filter: blur(20px);
-      -webkit-backdrop-filter: blur(20px);
-      border-radius: 32px;
-      padding: 28px 22px;
-      width: 100%;
-      max-width: 460px;
-      box-shadow: 0 30px 50px rgba(0, 0, 0, 0.35);
-      max-height: 90vh;
-      overflow-y: auto;
-      display: flex;
-      flex-direction: column;
-      gap: 20px;
+      max-width: 600px;
+      margin: 0 auto;
     }
 
-    h1 {
+    .app-header {
       text-align: center;
-      color: #2d2d3a;
-      margin: 0;
-      font-size: 26px;
+      color: white;
+      margin-bottom: 20px;
+    }
+
+    .app-header h1 {
+      font-size: 2.2em;
       font-weight: 700;
-      letter-spacing: 1px;
+      text-shadow: 0 2px 10px rgba(0,0,0,0.2);
+    }
+
+    .sync-status {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      margin-top: 8px;
+      font-size: 0.85em;
+      opacity: 0.9;
+    }
+
+    .sync-indicator {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: #4CAF50;
+      display: inline-block;
+    }
+
+    .sync-indicator.syncing {
+      background: #FFC107;
+      animation: pulse 1s infinite;
+    }
+
+    .sync-indicator.error {
+      background: #F44336;
+    }
+
+    @keyframes pulse {
+      0% { opacity: 1; }
+      50% { opacity: 0.5; }
+      100% { opacity: 1; }
+    }
+
+    .card {
+      background: white;
+      border-radius: 20px;
+      padding: 20px;
+      margin-bottom: 16px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.15);
+      backdrop-filter: blur(10px);
+    }
+
+    .category-selector {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 20px;
+      flex-wrap: wrap;
+    }
+
+    .category-btn {
+      flex: 1;
+      min-width: 80px;
+      padding: 12px 16px;
+      border: 2px solid #e0e0e0;
+      background: white;
+      border-radius: 25px;
+      font-size: 1em;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.3s;
+      color: #555;
+      white-space: nowrap;
+    }
+
+    .category-btn.active {
+      background: #667eea;
+      color: white;
+      border-color: #667eea;
+      box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+    }
+
+    .result-display {
+      text-align: center;
+      padding: 30px 20px;
+      background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+      border-radius: 15px;
+      margin-bottom: 20px;
+      min-height: 100px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-direction: column;
+      cursor: pointer;
+      transition: transform 0.2s;
+      position: relative;
+    }
+
+    .result-display:hover {
+      transform: scale(1.02);
+    }
+
+    .result-display .placeholder {
+      color: #999;
+      font-size: 1.1em;
+    }
+
+    .result-display .selected-item {
+      font-size: 2em;
+      font-weight: 700;
+      color: #333;
+    }
+
+    .result-display .item-desc {
+      font-size: 0.9em;
+      color: #666;
+      margin-top: 8px;
+      max-width: 300px;
+    }
+
+    .btn-group {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .btn {
+      padding: 12px 20px;
+      border: none;
+      border-radius: 25px;
+      font-size: 1em;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.3s;
       display: flex;
       align-items: center;
       justify-content: center;
       gap: 6px;
-    }
-
-    .categories-row {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-    }
-
-    .categories {
-      display: flex;
-      gap: 8px;
-      flex-wrap: wrap;
       flex: 1;
-      align-items: center;
+      min-width: 80px;
     }
 
-    .category-btn {
-      padding: 10px 18px;
-      border: 2px solid #e4e4f0;
-      border-radius: 40px;
-      background: white;
-      font-size: 15px;
+    .btn-primary {
+      background: #667eea;
+      color: white;
+      box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+    }
+
+    .btn-primary:hover {
+      background: #5a6fd6;
+    }
+
+    .btn-secondary {
+      background: #f0f0f0;
+      color: #555;
+    }
+
+    .btn-danger {
+      background: #ff6b6b;
+      color: white;
+    }
+
+    .items-list {
+      margin-top: 15px;
+    }
+
+    .item-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 12px;
+      border-bottom: 1px solid #eee;
+      gap: 10px;
+      transition: background 0.2s;
+    }
+
+    .item-row:hover {
+      background: #f9f9f9;
+    }
+
+    .item-info {
+      flex: 1;
+      cursor: pointer;
+    }
+
+    .item-name {
       font-weight: 600;
-      cursor: pointer;
-      transition: all 0.25s ease;
-      color: #4b4b5e;
-      white-space: nowrap;
-      position: relative;
-      display: inline-flex;
-      align-items: center;
-      gap: 4px;
-      box-shadow: 0 2px 6px rgba(0,0,0,0.02);
+      color: #333;
     }
 
-    .category-btn.active {
-      background: linear-gradient(135deg, #667eea, #7c4d9e);
-      color: white;
-      border-color: transparent;
-      box-shadow: 0 8px 18px rgba(102, 126, 234, 0.45);
-      transform: scale(1.02);
+    .item-desc-preview {
+      font-size: 0.8em;
+      color: #888;
+      margin-top: 2px;
     }
 
-    .category-btn .delete-cat {
-      position: absolute;
-      top: -8px;
-      right: -8px;
-      width: 22px;
-      height: 22px;
+    .item-actions {
+      display: flex;
+      gap: 8px;
+    }
+
+    .icon-btn {
+      width: 32px;
+      height: 32px;
       border-radius: 50%;
-      background: #f06b6b;
-      color: white;
-      font-size: 14px;
       border: none;
+      background: #f0f0f0;
       cursor: pointer;
-      display: none;
-      align-items: center;
-      justify-content: center;
-      line-height: 1;
-      font-weight: bold;
-      box-shadow: 0 2px 6px rgba(0,0,0,0.2);
-      transition: 0.2s;
-    }
-
-    .category-btn:hover .delete-cat {
-      display: flex;
-    }
-
-    .add-cat-btn {
-      padding: 10px 16px;
-      border: 2px dashed #b8b8ff;
-      border-radius: 40px;
-      background: rgba(255,255,255,0.7);
-      font-size: 22px;
-      cursor: pointer;
-      color: #7b7b9a;
-      transition: all 0.25s;
-      font-weight: 500;
       display: flex;
       align-items: center;
       justify-content: center;
-      min-width: 48px;
+      font-size: 0.9em;
+      transition: all 0.2s;
     }
 
-    .add-cat-btn:hover {
-      border-color: #667eea;
-      color: #667eea;
-      background: #f3f3ff;
+    .icon-btn:hover {
+      background: #e0e0e0;
     }
 
-    .options-grid {
-      display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      gap: 12px;
-      margin: 4px 0;
-    }
-
-    .option-item {
-      background: #f8f9ff;
-      border: 2px solid #e8e8ff;
-      border-radius: 18px;
-      padding: 16px 6px;
-      text-align: center;
-      font-size: 15px;
-      font-weight: 550;
-      color: #4a4a5e;
-      cursor: pointer;
-      transition: all 0.25s ease;
-      word-break: break-word;
+    .add-section {
       display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      min-height: 68px;
-      background: white;
+      gap: 10px;
+      margin-top: 15px;
+      flex-wrap: wrap;
     }
 
-    .option-item .item-desc-preview {
-      font-size: 10px;
-      color: #9a9ab0;
-      margin-top: 4px;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      white-space: nowrap;
-      max-width: 90%;
+    .input-group {
+      flex: 1;
+      min-width: 120px;
     }
 
-    .option-item:hover {
-      border-color: #667eea;
-      background: #f0f2ff;
-      transform: translateY(-2px);
-    }
-
-    .option-item.highlight {
-      background: linear-gradient(135deg, #667eea, #7b4ca8);
-      color: white;
-      border-color: transparent;
-      transform: scale(1.04);
-      box-shadow: 0 12px 22px rgba(102, 126, 234, 0.55);
-      animation: pop 0.5s ease;
-    }
-
-    .option-item.highlight .item-desc-preview {
-      color: rgba(255,255,255,0.8);
-    }
-
-    @keyframes pop {
-      0% { transform: scale(1); }
-      50% { transform: scale(1.1); }
-      100% { transform: scale(1.04); }
-    }
-
-    .result-area {
-      text-align: center;
-      min-height: 60px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-    }
-
-    .result-text {
-      font-size: 22px;
-      font-weight: 700;
-      color: #2d2d3a;
-      padding: 12px 20px;
-      background: #f4f4fc;
-      border-radius: 20px;
-      transition: all 0.3s ease;
-      display: inline-block;
-      word-break: break-word;
-    }
-
-    .result-text.show {
-      background: linear-gradient(135deg, #667eea, #7b4ca8);
-      color: white;
-      animation: pop 0.4s ease;
-    }
-
-    .result-desc {
-      display: block;
-      font-size: 14px;
-      font-weight: 400;
-      margin-top: 6px;
-      opacity: 0.9;
-    }
-
-    .random-btn {
+    .input-group input {
       width: 100%;
-      padding: 18px;
-      border: none;
-      border-radius: 30px;
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-      color: white;
-      font-size: 20px;
-      font-weight: 700;
-      cursor: pointer;
-      transition: all 0.25s ease;
-      box-shadow: 0 10px 22px rgba(102, 126, 234, 0.5);
-      letter-spacing: 2px;
-      margin-top: 4px;
+      padding: 12px;
+      border: 2px solid #e0e0e0;
+      border-radius: 25px;
+      font-size: 0.95em;
+      outline: none;
+      transition: border 0.3s;
     }
 
-    .random-btn:active {
-      transform: scale(0.96);
-      box-shadow: 0 6px 14px rgba(102, 126, 234, 0.6);
-    }
-
-    .tip {
-      text-align: center;
-      color: #9090a8;
-      font-size: 13px;
-      margin-top: 2px;
-      line-height: 1.6;
-    }
-
-    .sync-status {
-      text-align: center;
-      font-size: 12px;
-      color: #8e8ea0;
-      min-height: 20px;
-      margin-top: 2px;
+    .input-group input:focus {
+      border-color: #667eea;
     }
 
     .modal-overlay {
-      display: none;
       position: fixed;
       top: 0;
       left: 0;
-      right: 0;
-      bottom: 0;
-      background: rgba(0,0,0,0.5);
-      z-index: 1000;
-      justify-content: center;
-      align-items: center;
-      backdrop-filter: blur(4px);
-    }
-
-    .modal-overlay.show {
-      display: flex;
-    }
-
-    .modal-box {
-      background: white;
-      border-radius: 28px;
-      padding: 28px 22px;
-      width: 85%;
-      max-width: 360px;
-      text-align: center;
-      box-shadow: 0 25px 50px rgba(0,0,0,0.35);
-      animation: pop 0.3s ease;
-    }
-
-    .modal-box h3 {
-      margin-bottom: 6px;
-      color: #2d2d3a;
-      font-size: 20px;
-    }
-
-    .modal-box .subtitle {
-      font-size: 13px;
-      color: #8e8ea0;
-      margin-bottom: 18px;
-    }
-
-    .modal-box label {
-      display: block;
-      text-align: left;
-      font-size: 13px;
-      color: #6b6b7c;
-      margin-bottom: 4px;
-      margin-top: 12px;
-      font-weight: 500;
-    }
-
-    .modal-box input,
-    .modal-box textarea {
       width: 100%;
-      padding: 12px 14px;
-      border: 2px solid #e2e2f0;
-      border-radius: 16px;
-      font-size: 15px;
-      outline: none;
-      transition: border 0.2s;
-      font-family: inherit;
-      background: #fafaff;
-    }
-
-    .modal-box textarea {
-      resize: vertical;
-      min-height: 70px;
-    }
-
-    .modal-box input:focus,
-    .modal-box textarea:focus {
-      border-color: #667eea;
-      background: white;
-    }
-
-    .modal-buttons {
+      height: 100%;
+      background: rgba(0,0,0,0.5);
       display: flex;
-      gap: 12px;
-      margin-top: 20px;
+      align-items: center;
+      justify-content: center;
+      z-index: 1000;
+      backdrop-filter: blur(3px);
     }
 
-    .modal-buttons button {
-      flex: 1;
-      padding: 13px;
+    .modal {
+      background: white;
       border-radius: 20px;
-      font-size: 15px;
-      font-weight: 600;
-      cursor: pointer;
-      border: none;
-      transition: 0.2s;
+      padding: 25px;
+      width: 90%;
+      max-width: 400px;
+      box-shadow: 0 20px 40px rgba(0,0,0,0.3);
     }
 
-    .btn-cancel {
-      background: #f0f0f5;
-      color: #5e5e72;
+    .modal h3 {
+      margin-bottom: 15px;
+      color: #333;
     }
 
-    .btn-confirm {
-      background: linear-gradient(135deg, #667eea, #764ba2);
-      color: white;
-    }
-
-    .btn-delete {
-      background: #ffe8e8;
-      color: #d9534f;
-      font-size: 14px;
-      margin-top: 16px;
+    .modal input, .modal textarea {
       width: 100%;
       padding: 12px;
-      border-radius: 20px;
-      border: none;
-      cursor: pointer;
-      font-weight: 600;
+      border: 2px solid #e0e0e0;
+      border-radius: 12px;
+      margin-bottom: 12px;
+      font-size: 0.95em;
+      font-family: inherit;
+      outline: none;
     }
 
-    .add-btn {
-      background: white !important;
-      border: 2px dashed #c4c4ff !important;
-      color: #8e8eb0;
-      font-size: 30px;
-      cursor: pointer;
-      border-radius: 18px;
-      padding: 8px 0;
-      transition: all 0.25s;
-      font-weight: 300;
-      min-height: 68px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
+    .modal textarea {
+      min-height: 80px;
+      resize: vertical;
     }
 
-    .add-btn:hover {
-      border-color: #667eea !important;
-      color: #667eea;
-      background: #f6f6ff !important;
+    .modal .btn-group {
+      margin-top: 10px;
+    }
+
+    .github-config {
+      font-size: 0.85em;
+      color: #666;
+      margin-top: 10px;
+      text-align: center;
+    }
+
+    .github-config input {
+      margin-top: 5px;
+      text-align: center;
+    }
+
+    .hidden {
+      display: none !important;
     }
 
     .help-text {
-      font-size: 12px;
-      color: #7b7b9a;
-      text-align: left;
-      margin-bottom: 12px;
-      line-height: 1.5;
-      background: #f4f4fc;
-      padding: 10px;
-      border-radius: 14px;
+      font-size: 0.75em;
+      color: #888;
+      margin-top: 5px;
     }
 
-    .help-text a {
-      color: #667eea;
-      font-weight: 500;
+    @media (max-width: 400px) {
+      .category-btn {
+        font-size: 0.85em;
+        padding: 10px 12px;
+      }
+      .btn {
+        padding: 10px 14px;
+        font-size: 0.9em;
+      }
     }
   </style>
 </head>
 <body>
-<div class="container">
-  <h1>🎲 共享随机选择器</h1>
-
-  <!-- 分类选择 -->
-  <div class="categories-row">
-    <div class="categories" id="categoryBtns"></div>
-    <button class="add-cat-btn" onclick="addCategory()" title="添加新分类">+</button>
-  </div>
-
-  <!-- 选项网格 -->
-  <div class="options-grid" id="optionsGrid"></div>
-
-  <!-- 结果展示 -->
-  <div class="result-area">
-    <span class="result-text" id="resultText">点击下方按钮随机选择</span>
-  </div>
-
-  <button class="random-btn" onclick="randomPick()">✨ 随 机 选 择</button>
-  <p class="tip">💡 点击选项编辑 | 长按分类可删除<br>➕ 右上角添加新分类</p>
-  <p class="sync-status" id="syncStatus"></p>
-</div>
-
-<!-- 编辑/添加选项弹窗 -->
-<div class="modal-overlay" id="modalOverlay">
-  <div class="modal-box">
-    <h3 id="modalTitle">选项详情</h3>
-    <p class="subtitle" id="modalSubtitle"></p>
-    <label>名称</label>
-    <input type="text" id="modalName" placeholder="例如：麻辣烫">
-    <label>介绍（可选）</label>
-    <textarea id="modalDesc" placeholder="加一段描述..."></textarea>
-    <div class="modal-buttons">
-      <button class="btn-cancel" onclick="closeModal()">取消</button>
-      <button class="btn-confirm" onclick="confirmEdit()">保存</button>
+  <div class="container">
+    <div class="app-header">
+      <h1>🎲 随机选择器</h1>
+      <div class="sync-status">
+        <span class="sync-indicator" id="syncIndicator"></span>
+        <span id="syncText">准备同步</span>
+      </div>
     </div>
-    <button class="btn-delete" id="btnDelete" onclick="deleteOption()">🗑️ 删除此选项</button>
-  </div>
-</div>
 
-<!-- 添加分类弹窗 -->
-<div class="modal-overlay" id="catModal">
-  <div class="modal-box">
-    <h3>✨ 新建分类</h3>
-    <p class="subtitle">例如：夜宵、零食、周末活动</p>
-    <label>分类名称</label>
-    <input type="text" id="catNameInput" placeholder="输入名称">
-    <div class="modal-buttons">
-      <button class="btn-cancel" onclick="closeCatModal()">取消</button>
-      <button class="btn-confirm" onclick="confirmAddCategory()">添加</button>
+    <!-- 分类选择 -->
+    <div class="card">
+      <div class="category-selector" id="categorySelector">
+        <!-- 动态生成分类按钮 -->
+      </div>
+      <button class="btn btn-secondary" onclick="showAddCategoryModal()" style="width:100%; margin-top:10px;">
+        ➕ 添加分类
+      </button>
+    </div>
+
+    <!-- 随机结果展示 -->
+    <div class="card">
+      <div class="result-display" id="resultDisplay" onclick="showItemDetail()">
+        <span class="placeholder">点击下方按钮随机选择</span>
+      </div>
+      <div class="btn-group">
+        <button class="btn btn-primary" onclick="randomSelect()">🎯 随机选择</button>
+        <button class="btn btn-secondary" onclick="clearResult()">🔄 清除</button>
+      </div>
+    </div>
+
+    <!-- 选项列表 -->
+    <div class="card">
+      <h3 style="margin-bottom: 10px;">📋 <span id="currentCategoryLabel">选项列表</span></h3>
+      <div class="items-list" id="itemsList">
+        <!-- 动态生成选项 -->
+      </div>
+      <div class="add-section">
+        <div class="input-group">
+          <input type="text" id="newItemName" placeholder="选项名称" maxlength="50">
+        </div>
+        <div class="input-group">
+          <input type="text" id="newItemDesc" placeholder="简介(可选)" maxlength="200">
+        </div>
+        <button class="btn btn-primary" onclick="addItem()" style="min-width:60px;">➕</button>
+      </div>
+    </div>
+
+    <!-- GitHub 配置卡片 -->
+    <div class="card">
+      <details>
+        <summary style="font-weight:600; cursor:pointer; color:#667eea;">⚙️ GitHub 同步设置</summary>
+        <div class="github-config" style="margin-top:15px;">
+          <p style="margin-bottom:10px;">使用 GitHub Gist 实现多人自动同步</p>
+          
+          <label style="display:block; text-align:left; margin-bottom:5px; font-weight:600;">🔑 GitHub Token</label>
+          <input type="password" id="gistToken" placeholder="输入你的 GitHub Personal Access Token" style="width:100%; margin-bottom:12px;">
+          <div class="help-text" style="text-align:left; margin-bottom:12px;">
+            需要 gist 权限。如果没有Token，<a href="https://github.com/settings/tokens" target="_blank" style="color:#667eea;">点此创建</a>
+          </div>
+          
+          <label style="display:block; text-align:left; margin-bottom:5px; font-weight:600;">📋 Gist ID</label>
+          <input type="text" id="gistId" placeholder="输入已有的 Gist ID，或留空自动创建" style="width:100%; margin-bottom:15px;">
+          
+          <div class="btn-group">
+            <button class="btn btn-primary" onclick="saveGitHubConfig()">💾 保存配置</button>
+            <button class="btn btn-secondary" onclick="syncNow()">🔄 立即同步</button>
+          </div>
+          
+          <div id="configStatus" style="margin-top:10px; font-size:0.85em;"></div>
+        </div>
+      </details>
     </div>
   </div>
-</div>
 
-<!-- Token 设置弹窗 -->
-<div class="modal-overlay" id="tokenModal">
-  <div class="modal-box">
-    <h3>🔐 首次同步设置</h3>
-    <p class="subtitle">连接 GitHub 实现多设备共享</p>
-    <div class="help-text">
-      📌 获取 Token：GitHub → Settings → Developer settings → Personal access tokens → Generate new token (classic)，勾选 <b>repo</b> 权限。<br>
-      <a href="https://github.com/settings/tokens" target="_blank">👉 点此快速获取 Token</a>
-    </div>
-    <label>GitHub 用户名</label>
-    <input type="text" id="tokenUsername" placeholder="例如 zhangsan">
-    <label>仓库名</label>
-    <input type="text" id="tokenRepo" placeholder="例如 my-data">
-    <label>Token</label>
-    <input type="password" id="tokenInput" placeholder="ghp_xxxx">
-    <div class="modal-buttons">
-      <button class="btn-cancel" onclick="skipToken()">跳过（仅本地）</button>
-      <button class="btn-confirm" onclick="saveToken()">保存并同步</button>
+  <!-- 选项详情弹窗 -->
+  <div class="modal-overlay hidden" id="detailModal">
+    <div class="modal">
+      <h3 id="detailTitle">选项详情</h3>
+      <p id="detailDesc" style="color:#666; margin-bottom:15px;"></p>
+      <button class="btn btn-primary" onclick="closeDetailModal()" style="width:100%;">关闭</button>
     </div>
   </div>
-</div>
 
-<script>
-  (function() {
-    // ---------- 配置 ----------
-    const FILE_PATH = 'shared-data.json';
-    let GITHUB_USERNAME = '';
-    let REPO_NAME = '';
-    let GITHUB_TOKEN = '';
-    let API_URL = '';
-    let data = {};
-    let currentCategory = '';
-    let editingIndex = -1;
-    let fileSHA = '';
-    let syncEnabled = false;
+  <!-- 添加分类弹窗 -->
+  <div class="modal-overlay hidden" id="categoryModal">
+    <div class="modal">
+      <h3>添加新分类</h3>
+      <input type="text" id="newCategoryName" placeholder="分类名称，如：早餐" maxlength="20">
+      <div class="btn-group">
+        <button class="btn btn-primary" onclick="addCategory()">✅ 添加</button>
+        <button class="btn btn-secondary" onclick="closeCategoryModal()">取消</button>
+      </div>
+    </div>
+  </div>
 
-    // ---------- DOM 元素 ----------
-    const categoryBtns = document.getElementById('categoryBtns');
-    const optionsGrid = document.getElementById('optionsGrid');
-    const resultText = document.getElementById('resultText');
-    const syncStatus = document.getElementById('syncStatus');
-    const modalOverlay = document.getElementById('modalOverlay');
-    const modalTitle = document.getElementById('modalTitle');
-    const modalSubtitle = document.getElementById('modalSubtitle');
-    const modalName = document.getElementById('modalName');
-    const modalDesc = document.getElementById('modalDesc');
-    const btnDelete = document.getElementById('btnDelete');
-    const catModal = document.getElementById('catModal');
-    const catNameInput = document.getElementById('catNameInput');
-    const tokenModal = document.getElementById('tokenModal');
-    const tokenUsername = document.getElementById('tokenUsername');
-    const tokenRepo = document.getElementById('tokenRepo');
-    const tokenInput = document.getElementById('tokenInput');
+  <script>
+    // ==================== 应用状态 ====================
+    const DEFAULT_CATEGORIES = ['早餐', '午餐', '晚餐'];
+    let appData = {
+      categories: [...DEFAULT_CATEGORIES],
+      items: {}
+    };
+    
+    // 初始化每个分类的空数组
+    DEFAULT_CATEGORIES.forEach(cat => {
+      appData.items[cat] = [];
+    });
 
-    // ---------- 工具函数 ----------
-    function setStatus(msg, isError = false) {
-      if (!syncStatus) return;
-      syncStatus.textContent = msg;
-      syncStatus.style.color = isError ? '#e05555' : '#4caf50';
-      if (!isError) {
-        setTimeout(() => { if (syncStatus) syncStatus.textContent = ''; }, 3500);
+    let currentCategory = DEFAULT_CATEGORIES[0];
+    let selectedItem = null;
+    let syncConfig = {
+      token: '',
+      gistId: ''
+    };
+    let syncTimer = null;
+    let isSyncing = false;
+
+    // ==================== 初始化 ====================
+    function init() {
+      loadLocalData();
+      loadSyncConfig();
+      renderCategories();
+      renderItems();
+      
+      // 显示配置状态
+      updateConfigStatus();
+      
+      // 如果有GitHub配置，尝试初始同步
+      if (syncConfig.token && syncConfig.gistId) {
+        updateSyncStatus('ready', '已配置同步');
+        syncFromGist(true);
+      } else {
+        updateSyncStatus('ready', '未配置同步');
+      }
+      
+      startAutoSync();
+    }
+
+    function loadLocalData() {
+      const saved = localStorage.getItem('randomPickerData');
+      if (saved) {
+        try {
+          const parsed = JSON.parse(saved);
+          if (parsed.categories && parsed.items) {
+            appData = parsed;
+            if (!appData.categories.includes(currentCategory)) {
+              currentCategory = appData.categories[0] || DEFAULT_CATEGORIES[0];
+            }
+          }
+        } catch (e) {
+          console.error('加载本地数据失败', e);
+        }
       }
     }
 
-    function loadTokenConfig() {
-      GITHUB_USERNAME = localStorage.getItem('gh_username') || '';
-      REPO_NAME = localStorage.getItem('gh_repo') || '';
-      GITHUB_TOKEN = localStorage.getItem('gh_token') || '';
-      if (GITHUB_USERNAME && REPO_NAME && GITHUB_TOKEN) {
-        API_URL = `https://api.github.com/repos/${GITHUB_USERNAME}/${REPO_NAME}/contents/${FILE_PATH}`;
-        syncEnabled = true;
-        return true;
-      }
-      return false;
+    function saveLocalData() {
+      localStorage.setItem('randomPickerData', JSON.stringify(appData));
     }
 
-    // 本地缓存
-    function loadLocalFallback() {
-      const local = localStorage.getItem('sharedPickerBackup');
-      if (local) {
-        try { data = JSON.parse(local); } catch (e) { data = {}; }
-      }
-      if (!data || Object.keys(data).length === 0) {
-        data = {
-          '🍳 早餐': [{ name: '包子', desc: '鲜肉包' }, { name: '油条', desc: '酥脆' }, { name: '豆浆', desc: '现磨' }],
-          '🍱 午餐': [{ name: '黄焖鸡', desc: '下饭' }, { name: '麻辣烫', desc: '自选' }, { name: '盖饭', desc: '锅气' }],
-          '🌙 晚餐': [{ name: '沙拉', desc: '轻食' }, { name: '火锅', desc: '过瘾' }, { name: '烧烤', desc: '滋滋' }]
-        };
+    function loadSyncConfig() {
+      const saved = localStorage.getItem('randomPickerSyncConfig');
+      if (saved) {
+        try {
+          syncConfig = JSON.parse(saved);
+          // 回填到输入框
+          document.getElementById('gistToken').value = syncConfig.token || '';
+          document.getElementById('gistId').value = syncConfig.gistId || '';
+        } catch (e) {
+          console.error('加载同步配置失败', e);
+        }
       }
     }
 
-    async function loadFromCloud() {
-      if (!syncEnabled) {
-        loadLocalFallback();
-        initApp();
-        return;
-      }
-      setStatus('☁️ 加载云端数据...');
-      try {
-        const response = await fetch(API_URL, {
-          headers: { 'Authorization': `token ${GITHUB_TOKEN}` }
-        });
-        if (!response.ok) throw new Error('加载失败');
-        const json = await response.json();
-        fileSHA = json.sha;
-        const content = JSON.parse(atob(json.content));
-        data = content;
-        setStatus('✅ 已同步最新数据');
-        localStorage.setItem('sharedPickerBackup', JSON.stringify(data));
-      } catch (err) {
-        console.warn(err);
-        setStatus('⚠️ 云端加载失败，使用本地缓存', true);
-        loadLocalFallback();
-      }
-      initApp();
+    function saveSyncConfigToStorage() {
+      localStorage.setItem('randomPickerSyncConfig', JSON.stringify(syncConfig));
     }
 
-    async function saveToCloud() {
-      localStorage.setItem('sharedPickerBackup', JSON.stringify(data));
-      if (!syncEnabled) {
-        setStatus('💾 已保存到本地');
-        return;
-      }
-      setStatus('⏳ 同步中...');
-      try {
-        const content = btoa(unescape(encodeURIComponent(JSON.stringify(data, null, 2))));
-        const body = { message: '更新随机选择器数据', content: content, sha: fileSHA };
-        const response = await fetch(API_URL, {
-          method: 'PUT',
-          headers: {
-            'Authorization': `token ${GITHUB_TOKEN}`,
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify(body)
-        });
-        if (!response.ok) throw new Error('上传失败');
-        const json = await response.json();
-        fileSHA = json.content.sha;
-        setStatus('✅ 已同步到云端，其他设备可更新');
-      } catch (err) {
-        console.error(err);
-        setStatus('❌ 同步失败，数据已存本地', true);
+    function updateConfigStatus() {
+      const statusDiv = document.getElementById('configStatus');
+      if (syncConfig.token && syncConfig.gistId) {
+        statusDiv.innerHTML = '<span style="color:#4CAF50;">✅ 同步已配置并启用</span>';
+      } else if (syncConfig.token) {
+        statusDiv.innerHTML = '<span style="color:#FFC107;">⚠️ Token已保存，但缺少Gist ID</span>';
+      } else {
+        statusDiv.innerHTML = '<span style="color:#888;">💡 输入Token和Gist ID后开始同步</span>';
       }
     }
 
-    // ---------- 渲染 ----------
+    // ==================== 渲染函数 ====================
     function renderCategories() {
-      if (!categoryBtns) return;
-      categoryBtns.innerHTML = '';
-      const categories = Object.keys(data);
-      if (categories.length === 0) {
-        data['默认'] = [{ name: '示例', desc: '点击编辑' }];
-        categories.push('默认');
-      }
-      if (!data[currentCategory] || !categories.includes(currentCategory)) {
-        currentCategory = categories[0];
-      }
-
-      categories.forEach(cat => {
-        const btn = document.createElement('button');
-        btn.className = 'category-btn';
-        if (cat === currentCategory) btn.classList.add('active');
-        btn.innerHTML = `<span>${cat}</span>`;
-
-        const delBtn = document.createElement('span');
-        delBtn.className = 'delete-cat';
-        delBtn.textContent = '×';
-        delBtn.onclick = (e) => {
-          e.stopPropagation();
-          deleteCategory(cat);
-        };
-        btn.appendChild(delBtn);
-        btn.onclick = () => switchCategory(cat);
-        categoryBtns.appendChild(btn);
-      });
+      const container = document.getElementById('categorySelector');
+      container.innerHTML = appData.categories.map(cat => `
+        <button class="category-btn ${cat === currentCategory ? 'active' : ''}" 
+                onclick="switchCategory('${escapeHtml(cat)}')">
+          ${escapeHtml(cat)}
+          ${appData.categories.length > 1 ? `<span style="margin-left:4px; opacity:0.7; font-size:0.8em;" onclick="event.stopPropagation(); deleteCategory('${escapeHtml(cat)}')">×</span>` : ''}
+        </button>
+      `).join('');
+      
+      document.getElementById('currentCategoryLabel').textContent = currentCategory;
     }
 
-    function renderOptions() {
-      if (!optionsGrid) return;
-      optionsGrid.innerHTML = '';
-      const items = data[currentCategory] || [];
-      items.forEach((item, index) => {
-        const div = document.createElement('div');
-        div.className = 'option-item';
-        const descPreview = item.desc ? item.desc.substring(0, 6) + (item.desc.length > 6 ? '…' : '') : '';
-        div.innerHTML = `${item.name}${descPreview ? `<span class="item-desc-preview">${descPreview}</span>` : ''}`;
-        div.onclick = () => openEditModal(index);
-        optionsGrid.appendChild(div);
-      });
-
-      const addDiv = document.createElement('div');
-      addDiv.className = 'option-item add-btn';
-      addDiv.innerHTML = '+';
-      addDiv.onclick = () => openAddModal();
-      optionsGrid.appendChild(addDiv);
+    function renderItems() {
+      const container = document.getElementById('itemsList');
+      const items = appData.items[currentCategory] || [];
+      
+      if (items.length === 0) {
+        container.innerHTML = '<div style="text-align:center; color:#999; padding:20px;">暂无选项，请添加</div>';
+        return;
+      }
+      
+      container.innerHTML = items.map((item, index) => `
+        <div class="item-row">
+          <div class="item-info" onclick="showItemDetailByIndex(${index})">
+            <div class="item-name">${escapeHtml(item.name)}</div>
+            ${item.desc ? `<div class="item-desc-preview">${escapeHtml(item.desc.substring(0, 30))}${item.desc.length > 30 ? '...' : ''}</div>` : ''}
+          </div>
+          <div class="item-actions">
+            <button class="icon-btn" onclick="editItem(${index})" title="编辑">✏️</button>
+            <button class="icon-btn" onclick="deleteItem(${index})" title="删除" style="color:#ff6b6b;">🗑️</button>
+          </div>
+        </div>
+      `).join('');
     }
 
+    function escapeHtml(text) {
+      const div = document.createElement('div');
+      div.textContent = text;
+      return div.innerHTML;
+    }
+
+    // ==================== 业务逻辑 ====================
     function switchCategory(cat) {
       currentCategory = cat;
+      selectedItem = null;
       renderCategories();
-      renderOptions();
+      renderItems();
       clearResult();
     }
 
-    function clearResult() {
-      document.querySelectorAll('.option-item').forEach(el => el.classList.remove('highlight'));
-      if (resultText) {
-        resultText.innerHTML = '点击下方按钮随机选择';
-        resultText.classList.remove('show');
-      }
-    }
-
-    // ---------- 随机选择 ----------
-    function randomPick() {
-      const items = data[currentCategory];
-      if (!items || items.length === 0) {
-        alert('当前分类没有选项，请先添加');
-        return;
-      }
-      const randomIndex = Math.floor(Math.random() * items.length);
-      const picked = items[randomIndex];
-
-      document.querySelectorAll('.option-item').forEach(el => el.classList.remove('highlight'));
-      const optionElements = document.querySelectorAll('.option-item');
-      if (optionElements[randomIndex]) {
-        optionElements[randomIndex].classList.add('highlight');
-      }
-
-      if (resultText) {
-        let descHTML = picked.desc ? `<span class="result-desc">${picked.desc}</span>` : '';
-        resultText.innerHTML = `🎉 ${currentCategory}：${picked.name}${descHTML}`;
-        resultText.classList.add('show');
-      }
-
-      const btn = document.querySelector('.random-btn');
-      if (btn) {
-        btn.style.transform = 'scale(0.94)';
-        setTimeout(() => { if (btn) btn.style.transform = ''; }, 150);
-      }
-    }
-
-    // ---------- 弹窗操作 ----------
-    function openEditModal(index) {
-      editingIndex = index;
-      const item = data[currentCategory][index];
-      modalTitle.textContent = '编辑选项';
-      modalSubtitle.textContent = `分类：${currentCategory}`;
-      modalName.value = item.name || '';
-      modalDesc.value = item.desc || '';
-      btnDelete.style.display = 'block';
-      modalOverlay.classList.add('show');
-      setTimeout(() => modalName.focus(), 150);
-    }
-
-    function openAddModal() {
-      editingIndex = -1;
-      modalTitle.textContent = '添加选项';
-      modalSubtitle.textContent = `分类：${currentCategory}`;
-      modalName.value = '';
-      modalDesc.value = '';
-      btnDelete.style.display = 'none';
-      modalOverlay.classList.add('show');
-      setTimeout(() => modalName.focus(), 150);
-    }
-
-    function closeModal() {
-      modalOverlay.classList.remove('show');
-      editingIndex = -1;
-    }
-
-    async function confirmEdit() {
-      const name = modalName.value.trim();
-      const desc = modalDesc.value.trim();
-      if (!name) {
-        alert('名称不能为空');
-        return;
-      }
-      const newItem = { name, desc };
-      if (editingIndex >= 0) {
-        data[currentCategory][editingIndex] = newItem;
-      } else {
-        data[currentCategory].push(newItem);
-      }
-      renderOptions();
-      clearResult();
-      closeModal();
-      await saveToCloud();
-    }
-
-    async function deleteOption() {
-      if (editingIndex < 0) return;
-      if (!confirm(`确定删除「${data[currentCategory][editingIndex].name}」吗？`)) return;
-      data[currentCategory].splice(editingIndex, 1);
-      renderOptions();
-      clearResult();
-      closeModal();
-      await saveToCloud();
-    }
-
-    // 分类操作
     function addCategory() {
-      catNameInput.value = '';
-      catModal.classList.add('show');
-      setTimeout(() => catNameInput.focus(), 150);
-    }
-
-    function closeCatModal() {
-      catModal.classList.remove('show');
-    }
-
-    async function confirmAddCategory() {
-      const name = catNameInput.value.trim();
-      if (!name) { alert('分类名称不能为空'); return; }
-      if (data[name]) { alert('该分类已存在'); return; }
-      data[name] = [];
-      currentCategory = name;
+      const nameInput = document.getElementById('newCategoryName');
+      const name = nameInput.value.trim();
+      
+      if (!name) {
+        alert('请输入分类名称');
+        return;
+      }
+      
+      if (appData.categories.includes(name)) {
+        alert('该分类已存在');
+        return;
+      }
+      
+      appData.categories.push(name);
+      appData.items[name] = [];
+      
+      saveLocalData();
       renderCategories();
-      renderOptions();
-      closeCatModal();
-      await saveToCloud();
+      closeCategoryModal();
+      nameInput.value = '';
+      
+      syncToGist();
     }
 
-    async function deleteCategory(cat) {
-      const cats = Object.keys(data);
-      if (cats.length <= 1) {
+    function deleteCategory(cat) {
+      if (appData.categories.length <= 1) {
         alert('至少保留一个分类');
         return;
       }
-      if (!confirm(`确定删除分类「${cat}」及其所有选项吗？`)) return;
-      delete data[cat];
-      if (currentCategory === cat) {
-        currentCategory = Object.keys(data)[0];
+      
+      if (!confirm(`确定要删除分类"${cat}"及其所有选项吗？`)) return;
+      
+      const index = appData.categories.indexOf(cat);
+      if (index > -1) {
+        appData.categories.splice(index, 1);
+        delete appData.items[cat];
+        
+        if (currentCategory === cat) {
+          currentCategory = appData.categories[0];
+        }
+        
+        saveLocalData();
+        renderCategories();
+        renderItems();
+        clearResult();
+        syncToGist();
       }
-      renderCategories();
-      renderOptions();
-      clearResult();
-      await saveToCloud();
     }
 
-    // Token 相关
-    function saveToken() {
-      const username = tokenUsername.value.trim();
-      const repo = tokenRepo.value.trim();
-      const token = tokenInput.value.trim();
-      if (!username || !repo || !token) {
-        alert('请填写所有字段');
+    function addItem() {
+      const nameInput = document.getElementById('newItemName');
+      const descInput = document.getElementById('newItemDesc');
+      const name = nameInput.value.trim();
+      const desc = descInput.value.trim();
+      
+      if (!name) {
+        alert('请输入选项名称');
         return;
       }
-      localStorage.setItem('gh_username', username);
-      localStorage.setItem('gh_repo', repo);
-      localStorage.setItem('gh_token', token);
-      tokenModal.classList.remove('show');
-      loadTokenConfig();
-      loadFromCloud();
-    }
-
-    function skipToken() {
-      tokenModal.classList.remove('show');
-      syncEnabled = false;
-      loadLocalFallback();
-      initApp();
-      setStatus('📦 仅本地模式');
-    }
-
-    function initApp() {
-      const cats = Object.keys(data);
-      if (cats.length === 0) {
-        data['默认'] = [{ name: '示例', desc: '点击编辑' }];
+      
+      if (!appData.items[currentCategory]) {
+        appData.items[currentCategory] = [];
       }
-      if (!data[currentCategory]) {
-        currentCategory = cats[0] || '默认';
+      
+      if (appData.items[currentCategory].some(item => item.name === name)) {
+        alert('该选项已存在');
+        return;
       }
-      renderCategories();
-      renderOptions();
+      
+      appData.items[currentCategory].push({ name, desc });
+      
+      saveLocalData();
+      renderItems();
+      nameInput.value = '';
+      descInput.value = '';
+      nameInput.focus();
+      
+      syncToGist();
     }
 
-    // 事件绑定
-    modalOverlay.addEventListener('click', (e) => {
-      if (e.target === modalOverlay) closeModal();
-    });
-    catModal.addEventListener('click', (e) => {
-      if (e.target === catModal) closeCatModal();
-    });
-    modalDesc.addEventListener('keydown', (e) => {
-      if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) confirmEdit();
-    });
-    catNameInput.addEventListener('keydown', (e) => {
-      if (e.key === 'Enter') confirmAddCategory();
-    });
-
-    // 启动
-    if (loadTokenConfig()) {
-      loadFromCloud();
-    } else {
-      loadLocalFallback();
-      initApp();
-      tokenModal.classList.add('show');
+    function deleteItem(index) {
+      if (!confirm('确定删除这个选项吗？')) return;
+      
+      appData.items[currentCategory].splice(index, 1);
+      if (selectedItem && selectedItem.category === currentCategory && selectedItem.index === index) {
+        selectedItem = null;
+        clearResult();
+      }
+      
+      saveLocalData();
+      renderItems();
+      syncToGist();
     }
 
-    // 暴露全局函数
-    window.randomPick = randomPick;
-    window.addCategory = addCategory;
-    window.closeModal = closeModal;
-    window.confirmEdit = confirmEdit;
-    window.deleteOption = deleteOption;
-    window.closeCatModal = closeCatModal;
-    window.confirmAddCategory = confirmAddCategory;
-    window.saveToken = saveToken;
-    window.skipToken = skipToken;
+    function editItem(index) {
+      const item = appData.items[currentCategory][index];
+      const newName = prompt('编辑选项名称:', item.name);
+      if (newName === null) return;
+      const trimmedName = newName.trim();
+      if (!trimmedName) {
+        alert('名称不能为空');
+        return;
+      }
+      
+      const newDesc = prompt('编辑简介:', item.desc || '');
+      if (newDesc === null) return;
+      
+      item.name = trimmedName;
+      item.desc = newDesc.trim();
+      
+      saveLocalData();
+      renderItems();
+      syncToGist();
+    }
 
+    function randomSelect() {
+      const items = appData.items[currentCategory] || [];
+      
+      if (items.length === 0) {
+        alert(`"${currentCategory}" 分类下没有选项，请先添加`);
+        return;
+      }
+      
+      const randomIndex = Math.floor(Math.random() * items.length);
+      const item = items[randomIndex];
+      
+      selectedItem = {
+        category: currentCategory,
+        index: randomIndex,
+        name: item.name,
+        desc: item.desc
+      };
+      
+      displayResult(item);
+    }
+
+    function displayResult(item) {
+      const display = document.getElementById('resultDisplay');
+      display.innerHTML = `
+        <div class="selected-item">${escapeHtml(item.name)}</div>
+        ${item.desc ? `<div class="item-desc">${escapeHtml(item.desc)}</div>` : ''}
+        <div style="font-size:0.7em; color:#888; margin-top:8px;">点击查看详情</div>
+      `;
+    }
+
+    function clearResult() {
+      selectedItem = null;
+      document.getElementById('resultDisplay').innerHTML = '<span class="placeholder">点击下方按钮随机选择</span>';
+    }
+
+    function showItemDetail() {
+      if (!selectedItem) return;
+      
+      document.getElementById('detailTitle').textContent = selectedItem.name;
+      document.getElementById('detailDesc').textContent = selectedItem.desc || '暂无详细介绍';
+      document.getElementById('detailModal').classList.remove('hidden');
+    }
+
+    function showItemDetailByIndex(index) {
+      const item = appData.items[currentCategory][index];
+      selectedItem = {
+        category: currentCategory,
+        index: index,
+        name: item.name,
+        desc: item.desc
+      };
+      displayResult(item);
+      showItemDetail();
+    }
+
+    function closeDetailModal() {
+      document.getElementById('detailModal').classList.add('hidden');
+    }
+
+    function showAddCategoryModal() {
+      document.getElementById('categoryModal').classList.remove('hidden');
+      document.getElementById('newCategoryName').focus();
+    }
+
+    function closeCategoryModal() {
+      document.getElementById('categoryModal').classList.add('hidden');
+    }
+
+    // 点击弹窗外部关闭
+    window.addEventListener('click', function(e) {
+      if (e.target.classList.contains('modal-overlay')) {
+        e.target.classList.add('hidden');
+      }
+    });
+
+    // ==================== GitHub 同步 ====================
+    function saveGitHubConfig() {
+      const tokenInput = document.getElementById('gistToken');
+      const gistIdInput = document.getElementById('gistId');
+      const token = tokenInput.value.trim();
+      const gistId = gistIdInput.value.trim();
+      
+      if (!token) {
+        alert('请输入 GitHub Token');
+        return;
+      }
+      
+      syncConfig.token = token;
+      syncConfig.gistId = gistId;
+      
+      saveSyncConfigToStorage();
+      updateConfigStatus();
+      
+      if (token && gistId) {
+        updateSyncStatus('ready', '配置已保存');
+        syncFromGist(true);
+      } else if (token && !gistId) {
+        // 自动创建Gist
+        createNewGist();
+      }
+    }
+
+    async function createNewGist() {
+      if (!syncConfig.token) {
+        alert('请先输入 GitHub Token');
+        return;
+      }
+      
+      updateSyncStatus('syncing', '正在创建 Gist...');
+      
+      try {
+        const response = await fetch('https://api.github.com/gists', {
+          method: 'POST',
+          headers: {
+            'Authorization': `token ${syncConfig.token}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            description: '随机选择器数据 - 自动同步',
+            public: false,
+            files: {
+              'picker-data.json': {
+                content: JSON.stringify(appData, null, 2)
+              }
+            }
+          })
+        });
+        
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.message || '创建Gist失败');
+        }
+        
+        const data = await response.json();
+        syncConfig.gistId = data.id;
+        document.getElementById('gistId').value = data.id;
+        saveSyncConfigToStorage();
+        updateConfigStatus();
+        
+        updateSyncStatus('ready', 'Gist 创建成功');
+        alert(`Gist 创建成功！\nID: ${data.id}\n\n其他人使用此ID和他们的Token即可同步数据。`);
+      } catch (error) {
+        console.error('创建Gist失败:', error);
+        updateSyncStatus('error', '创建失败: ' + error.message);
+        alert('创建Gist失败: ' + error.message + '\n\n请确保Token具有 gist 权限。');
+      }
+    }
+
+    async function syncFromGist(silent = false) {
+      if (!syncConfig.token || !syncConfig.gistId) {
+        if (!silent) {
+          alert('请先配置 GitHub Token 和 Gist ID');
+        }
+        return;
+      }
+      
+      if (isSyncing) return;
+      isSyncing = true;
+      updateSyncStatus('syncing', '同步中...');
+      
+      try {
+        const response = await fetch(`https://api.github.com/gists/${syncConfig.gistId}`, {
+          headers: {
+            'Authorization': `token ${syncConfig.token}`,
+            'Accept': 'application/vnd.github.v3+json'
+          }
+        });
+        
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.message || '获取Gist失败');
+        }
+        
+        const data = await response.json();
+        const file = data.files['picker-data.json'];
+        
+        if (file && file.content) {
+          const remoteData = JSON.parse(file.content);
+          
+          if (remoteData.categories && remoteData.items) {
+            appData = remoteData;
+            if (!appData.categories.includes(currentCategory)) {
+              currentCategory = appData.categories[0] || DEFAULT_CATEGORIES[0];
+            }
+            saveLocalData();
+            renderCategories();
+            renderItems();
+            clearResult();
+            
+            if (!silent) {
+              console.log('✅ 从 Gist 同步成功');
+            }
+            updateSyncStatus('ready', '同步成功');
+          }
+        }
+      } catch (error) {
+        console.error('同步失败:', error);
+        updateSyncStatus('error', '同步失败');
+        if (!silent) {
+          alert('同步失败: ' + error.message + '\n\n请检查Token和Gist ID是否正确。');
+        }
+      } finally {
+        isSyncing = false;
+      }
+    }
+
+    async function syncToGist() {
+      if (!syncConfig.token || !syncConfig.gistId) return;
+      
+      if (isSyncing) {
+        setTimeout(() => syncToGist(), 2000);
+        return;
+      }
+      
+      isSyncing = true;
+      updateSyncStatus('syncing', '上传中...');
+      
+      try {
+        const response = await fetch(`https://api.github.com/gists/${syncConfig.gistId}`, {
+          method: 'PATCH',
+          headers: {
+            'Authorization': `token ${syncConfig.token}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            files: {
+              'picker-data.json': {
+                content: JSON.stringify(appData, null, 2)
+              }
+            }
+          })
+        });
+        
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.message || '更新Gist失败');
+        }
+        
+        updateSyncStatus('ready', '已同步');
+        console.log('✅ 数据已上传到 Gist');
+      } catch (error) {
+        console.error('上传失败:', error);
+        updateSyncStatus('error', '上传失败: ' + error.message);
+      } finally {
+        isSyncing = false;
+      }
+    }
+
+    function syncNow() {
+      if (!syncConfig.token || !syncConfig.gistId) {
+        alert('请先配置 GitHub Token 和 Gist ID');
+        return;
+      }
+      syncFromGist(false);
+    }
+
+    function startAutoSync() {
+      if (syncTimer) clearInterval(syncTimer);
+      
+      syncTimer = setInterval(() => {
+        if (syncConfig.token && syncConfig.gistId && !isSyncing) {
+          syncFromGist(true);
+        }
+      }, 30000);
+      
+      let uploadTimeout;
+      const originalSaveLocalData = saveLocalData;
+      saveLocalData = function() {
+        originalSaveLocalData();
+        clearTimeout(uploadTimeout);
+        uploadTimeout = setTimeout(() => {
+          if (syncConfig.token && syncConfig.gistId) {
+            syncToGist();
+          }
+        }, 2000);
+      };
+    }
+
+    function updateSyncStatus(status, text) {
+      const indicator = document.getElementById('syncIndicator');
+      const textEl = document.getElementById('syncText');
+      
+      indicator.className = 'sync-indicator';
+      if (status === 'syncing') indicator.classList.add('syncing');
+      if (status === 'error') indicator.classList.add('error');
+      
+      textEl.textContent = text;
+    }
+
+    // ==================== 启动应用 ====================
+    init();
+    
+    // 注册Service Worker实现PWA离线缓存
     if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.register('sw.js')
-        .then(() => console.log('SW registered'))
-        .catch(() => console.log('SW registration failed'));
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register(
+          URL.createObjectURL(
+            new Blob([`
+              self.addEventListener('install', event => {
+                self.skipWaiting();
+              });
+              self.addEventListener('activate', event => {
+                event.waitUntil(self.clients.claim());
+              });
+              self.addEventListener('fetch', event => {
+                event.respondWith(
+                  fetch(event.request).catch(() => {
+                    return caches.match(event.request);
+                  })
+                );
+              });
+            `], { type: 'application/javascript' })
+          )
+        ).catch(err => console.log('SW注册失败:', err));
+      });
     }
-  })();
-</script>
+  </script>
 </body>
 </html>
