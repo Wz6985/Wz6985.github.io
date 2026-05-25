@@ -1,537 +1,905 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>菜单</title>
-    <link rel="manifest" href="manifest.json">
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <meta name="apple-mobile-web-app-title" content="随机选">
-    <link rel="apple-touch-icon" href="icon.png">
-    <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            min-height: 100vh;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            padding: 20px;
-        }
-        .container {
-            background: white;
-            border-radius: 24px;
-            padding: 30px 25px;
-            width: 100%;
-            max-width: 460px;
-            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
-            max-height: 90vh;
-            overflow-y: auto;
-        }
-        h1 { text-align: center; color: #333; margin-bottom: 20px; font-size: 24px; }
-        /* 分类区域 */
-        .categories-wrapper { display: flex; align-items: flex-start; gap: 8px; margin-bottom: 20px; }
-        .categories { display: flex; gap: 8px; flex-wrap: wrap; flex: 1; }
-        .category-btn {
-            padding: 12px 16px; border: 2px solid #e0e0e0; border-radius: 14px;
-            background: white; font-size: 15px; font-weight: 600; cursor: pointer;
-            transition: all 0.3s ease; color: #666; white-space: nowrap; position: relative;
-        }
-        .category-btn.active {
-            background: linear-gradient(135deg, #667eea, #764ba2); color: white;
-            border-color: transparent; transform: scale(1.03);
-            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
-        }
-        .category-btn .delete-cat {
-            position: absolute; top: -6px; right: -6px;
-            width: 18px; height: 18px; border-radius: 50%;
-            background: #e05555; color: white; font-size: 10px;
-            border: none; cursor: pointer; display: none;
-            align-items: center; justify-content: center; line-height: 1;
-        }
-        .category-btn:hover .delete-cat { display: flex; }
-        .add-cat-btn {
-            padding: 12px 14px; border: 2px dashed #d0d0ff; border-radius: 14px;
-            background: none; font-size: 20px; cursor: pointer; color: #999;
-            transition: all 0.3s; white-space: nowrap; min-width: 44px; text-align: center;
-        }
-        .add-cat-btn:hover { border-color: #667eea; color: #667eea; background: #f8f9ff; }
-        /* 选项网格 */
-        .options-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 20px; }
-        .option-item {
-            background: #f8f9ff; border: 2px solid #e8e8ff; border-radius: 12px;
-            padding: 14px 8px; text-align: center; font-size: 15px; font-weight: 500;
-            color: #555; cursor: pointer; transition: all 0.3s ease; word-break: break-all;
-            display: flex; flex-direction: column; align-items: center; justify-content: center;
-            min-height: 56px;
-        }
-        .option-item .item-desc-preview {
-            font-size: 10px; color: #aaa; margin-top: 2px;
-            overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 100%;
-        }
-        .option-item:hover { border-color: #667eea; background: #eef0ff; }
-        .option-item.highlight {
-            background: linear-gradient(135deg, #667eea, #764ba2); color: white;
-            border-color: transparent; transform: scale(1.06);
-            box-shadow: 0 8px 25px rgba(102, 126, 234, 0.5); animation: pop 0.5s ease;
-        }
-        .option-item.highlight .item-desc-preview { color: rgba(255,255,255,0.7); }
-        @keyframes pop {
-            0% { transform: scale(1); }
-            50% { transform: scale(1.12); }
-            100% { transform: scale(1.06); }
-        }
-        .result-area { text-align: center; margin-bottom: 18px; min-height: 55px; display: flex; align-items: center; justify-content: center; }
-        .result-text {
-            font-size: 20px; font-weight: 700; color: #333; padding: 12px 20px;
-            background: #f8f9ff; border-radius: 12px; transition: all 0.3s ease; text-align: center;
-        }
-        .result-text.show {
-            background: linear-gradient(135deg, #667eea, #764ba2); color: white; animation: pop 0.5s ease;
-        }
-        .result-desc { display: block; font-size: 13px; font-weight: 400; margin-top: 4px; opacity: 0.8; }
-        .random-btn {
-            width: 100%; padding: 16px; border: none; border-radius: 16px;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white;
-            font-size: 18px; font-weight: 700; cursor: pointer; transition: all 0.3s ease;
-            box-shadow: 0 8px 25px rgba(102, 126, 234, 0.4); letter-spacing: 2px;
-        }
-        .random-btn:active { transform: scale(0.96); }
-        .tip { text-align: center; color: #aaa; font-size: 12px; margin-top: 12px; line-height: 1.6; }
-        .sync-status { text-align: center; font-size: 11px; color: #bbb; margin-top: 4px; min-height: 18px; }
-        /* 弹窗 */
-        .modal-overlay {
-            display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0;
-            background: rgba(0,0,0,0.5); z-index: 1000; justify-content: center; align-items: center;
-        }
-        .modal-overlay.show { display: flex; }
-        .modal-box {
-            background: white; border-radius: 20px; padding: 25px 20px; width: 85%;
-            max-width: 350px; text-align: center; box-shadow: 0 20px 60px rgba(0,0,0,0.3);
-            animation: pop 0.3s ease;
-        }
-        .modal-box h3 { margin-bottom: 8px; color: #333; font-size: 18px; }
-        .modal-box .subtitle { font-size: 13px; color: #999; margin-bottom: 16px; }
-        .modal-box label { display: block; text-align: left; font-size: 13px; color: #888; margin-bottom: 4px; margin-top: 10px; }
-        .modal-box input, .modal-box textarea {
-            width: 100%; padding: 10px 14px; border: 2px solid #e0e0e0; border-radius: 12px;
-            font-size: 15px; outline: none; transition: border 0.3s; font-family: inherit;
-        }
-        .modal-box textarea { resize: vertical; min-height: 60px; }
-        .modal-box input:focus, .modal-box textarea:focus { border-color: #667eea; }
-        .modal-buttons { display: flex; gap: 10px; margin-top: 16px; }
-        .modal-buttons button {
-            flex: 1; padding: 12px; border-radius: 12px; font-size: 15px;
-            font-weight: 600; cursor: pointer; border: none; transition: all 0.2s;
-        }
-        .btn-cancel { background: #f0f0f0; color: #666; }
-        .btn-confirm { background: linear-gradient(135deg, #667eea, #764ba2); color: white; }
-        .btn-delete {
-            background: #ffe0e0; color: #e05555; font-size: 13px;
-            margin-top: 12px; width: 100%; padding: 10px; border-radius: 10px;
-            border: none; cursor: pointer;
-        }
-        .add-btn {
-            background: none !important; border: 2px dashed #d0d0ff !important;
-            color: #999; font-size: 28px; cursor: pointer; border-radius: 12px;
-            padding: 8px 0; transition: all 0.3s; font-weight: 300;
-            min-height: 56px; display: flex; align-items: center; justify-content: center;
-        }
-        .add-btn:hover { border-color: #667eea !important; color: #667eea; background: #f8f9ff !important; }
-        #tokenModal .modal-box { max-width: 380px; }
-        #tokenModal .help-text { font-size: 12px; color: #999; text-align: left; margin-bottom: 10px; line-height: 1.5; }
-        #tokenModal .help-text a { color: #667eea; }
-    </style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes, viewport-fit=cover">
+  <title>共享随机选择器 · 一起决定</title>
+  <link rel="manifest" href="manifest.json">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="随机选">
+  <link rel="apple-touch-icon" href="icon.png">
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+      background: linear-gradient(145deg, #5f6af0 0%, #7b4ca8 100%);
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding: 20px;
+      margin: 0;
+    }
+
+    .container {
+      background: rgba(255, 255, 255, 0.96);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border-radius: 32px;
+      padding: 28px 22px;
+      width: 100%;
+      max-width: 460px;
+      box-shadow: 0 30px 50px rgba(0, 0, 0, 0.35);
+      max-height: 90vh;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+
+    h1 {
+      text-align: center;
+      color: #2d2d3a;
+      margin: 0;
+      font-size: 26px;
+      font-weight: 700;
+      letter-spacing: 1px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+    }
+
+    .categories-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .categories {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      flex: 1;
+      align-items: center;
+    }
+
+    .category-btn {
+      padding: 10px 18px;
+      border: 2px solid #e4e4f0;
+      border-radius: 40px;
+      background: white;
+      font-size: 15px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.25s ease;
+      color: #4b4b5e;
+      white-space: nowrap;
+      position: relative;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.02);
+    }
+
+    .category-btn.active {
+      background: linear-gradient(135deg, #667eea, #7c4d9e);
+      color: white;
+      border-color: transparent;
+      box-shadow: 0 8px 18px rgba(102, 126, 234, 0.45);
+      transform: scale(1.02);
+    }
+
+    .category-btn .delete-cat {
+      position: absolute;
+      top: -8px;
+      right: -8px;
+      width: 22px;
+      height: 22px;
+      border-radius: 50%;
+      background: #f06b6b;
+      color: white;
+      font-size: 14px;
+      border: none;
+      cursor: pointer;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      line-height: 1;
+      font-weight: bold;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+      transition: 0.2s;
+    }
+
+    .category-btn:hover .delete-cat {
+      display: flex;
+    }
+
+    .add-cat-btn {
+      padding: 10px 16px;
+      border: 2px dashed #b8b8ff;
+      border-radius: 40px;
+      background: rgba(255,255,255,0.7);
+      font-size: 22px;
+      cursor: pointer;
+      color: #7b7b9a;
+      transition: all 0.25s;
+      font-weight: 500;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-width: 48px;
+    }
+
+    .add-cat-btn:hover {
+      border-color: #667eea;
+      color: #667eea;
+      background: #f3f3ff;
+    }
+
+    .options-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 12px;
+      margin: 4px 0;
+    }
+
+    .option-item {
+      background: #f8f9ff;
+      border: 2px solid #e8e8ff;
+      border-radius: 18px;
+      padding: 16px 6px;
+      text-align: center;
+      font-size: 15px;
+      font-weight: 550;
+      color: #4a4a5e;
+      cursor: pointer;
+      transition: all 0.25s ease;
+      word-break: break-word;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 68px;
+      background: white;
+    }
+
+    .option-item .item-desc-preview {
+      font-size: 10px;
+      color: #9a9ab0;
+      margin-top: 4px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      max-width: 90%;
+    }
+
+    .option-item:hover {
+      border-color: #667eea;
+      background: #f0f2ff;
+      transform: translateY(-2px);
+    }
+
+    .option-item.highlight {
+      background: linear-gradient(135deg, #667eea, #7b4ca8);
+      color: white;
+      border-color: transparent;
+      transform: scale(1.04);
+      box-shadow: 0 12px 22px rgba(102, 126, 234, 0.55);
+      animation: pop 0.5s ease;
+    }
+
+    .option-item.highlight .item-desc-preview {
+      color: rgba(255,255,255,0.8);
+    }
+
+    @keyframes pop {
+      0% { transform: scale(1); }
+      50% { transform: scale(1.1); }
+      100% { transform: scale(1.04); }
+    }
+
+    .result-area {
+      text-align: center;
+      min-height: 60px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .result-text {
+      font-size: 22px;
+      font-weight: 700;
+      color: #2d2d3a;
+      padding: 12px 20px;
+      background: #f4f4fc;
+      border-radius: 20px;
+      transition: all 0.3s ease;
+      display: inline-block;
+      word-break: break-word;
+    }
+
+    .result-text.show {
+      background: linear-gradient(135deg, #667eea, #7b4ca8);
+      color: white;
+      animation: pop 0.4s ease;
+    }
+
+    .result-desc {
+      display: block;
+      font-size: 14px;
+      font-weight: 400;
+      margin-top: 6px;
+      opacity: 0.9;
+    }
+
+    .random-btn {
+      width: 100%;
+      padding: 18px;
+      border: none;
+      border-radius: 30px;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      font-size: 20px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.25s ease;
+      box-shadow: 0 10px 22px rgba(102, 126, 234, 0.5);
+      letter-spacing: 2px;
+      margin-top: 4px;
+    }
+
+    .random-btn:active {
+      transform: scale(0.96);
+      box-shadow: 0 6px 14px rgba(102, 126, 234, 0.6);
+    }
+
+    .tip {
+      text-align: center;
+      color: #9090a8;
+      font-size: 13px;
+      margin-top: 2px;
+      line-height: 1.6;
+    }
+
+    .sync-status {
+      text-align: center;
+      font-size: 12px;
+      color: #8e8ea0;
+      min-height: 20px;
+      margin-top: 2px;
+    }
+
+    .modal-overlay {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0,0,0,0.5);
+      z-index: 1000;
+      justify-content: center;
+      align-items: center;
+      backdrop-filter: blur(4px);
+    }
+
+    .modal-overlay.show {
+      display: flex;
+    }
+
+    .modal-box {
+      background: white;
+      border-radius: 28px;
+      padding: 28px 22px;
+      width: 85%;
+      max-width: 360px;
+      text-align: center;
+      box-shadow: 0 25px 50px rgba(0,0,0,0.35);
+      animation: pop 0.3s ease;
+    }
+
+    .modal-box h3 {
+      margin-bottom: 6px;
+      color: #2d2d3a;
+      font-size: 20px;
+    }
+
+    .modal-box .subtitle {
+      font-size: 13px;
+      color: #8e8ea0;
+      margin-bottom: 18px;
+    }
+
+    .modal-box label {
+      display: block;
+      text-align: left;
+      font-size: 13px;
+      color: #6b6b7c;
+      margin-bottom: 4px;
+      margin-top: 12px;
+      font-weight: 500;
+    }
+
+    .modal-box input,
+    .modal-box textarea {
+      width: 100%;
+      padding: 12px 14px;
+      border: 2px solid #e2e2f0;
+      border-radius: 16px;
+      font-size: 15px;
+      outline: none;
+      transition: border 0.2s;
+      font-family: inherit;
+      background: #fafaff;
+    }
+
+    .modal-box textarea {
+      resize: vertical;
+      min-height: 70px;
+    }
+
+    .modal-box input:focus,
+    .modal-box textarea:focus {
+      border-color: #667eea;
+      background: white;
+    }
+
+    .modal-buttons {
+      display: flex;
+      gap: 12px;
+      margin-top: 20px;
+    }
+
+    .modal-buttons button {
+      flex: 1;
+      padding: 13px;
+      border-radius: 20px;
+      font-size: 15px;
+      font-weight: 600;
+      cursor: pointer;
+      border: none;
+      transition: 0.2s;
+    }
+
+    .btn-cancel {
+      background: #f0f0f5;
+      color: #5e5e72;
+    }
+
+    .btn-confirm {
+      background: linear-gradient(135deg, #667eea, #764ba2);
+      color: white;
+    }
+
+    .btn-delete {
+      background: #ffe8e8;
+      color: #d9534f;
+      font-size: 14px;
+      margin-top: 16px;
+      width: 100%;
+      padding: 12px;
+      border-radius: 20px;
+      border: none;
+      cursor: pointer;
+      font-weight: 600;
+    }
+
+    .add-btn {
+      background: white !important;
+      border: 2px dashed #c4c4ff !important;
+      color: #8e8eb0;
+      font-size: 30px;
+      cursor: pointer;
+      border-radius: 18px;
+      padding: 8px 0;
+      transition: all 0.25s;
+      font-weight: 300;
+      min-height: 68px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .add-btn:hover {
+      border-color: #667eea !important;
+      color: #667eea;
+      background: #f6f6ff !important;
+    }
+
+    .help-text {
+      font-size: 12px;
+      color: #7b7b9a;
+      text-align: left;
+      margin-bottom: 12px;
+      line-height: 1.5;
+      background: #f4f4fc;
+      padding: 10px;
+      border-radius: 14px;
+    }
+
+    .help-text a {
+      color: #667eea;
+      font-weight: 500;
+    }
+  </style>
 </head>
 <body>
-    <div class="container">
-        <h1> 共享随机选择器</h1>
-        <!-- 分类区域 -->
-        <div class="categories-wrapper">
-            <div class="categories" id="categoryBtns"></div>
-            <button class="add-cat-btn" onclick="addCategory()" title="添加分类">+</button>
-        </div>
-        <div class="options-grid" id="optionsGrid"></div>
-        <div class="result-area">
-            <span class="result-text" id="resultText">点击下方按钮随机选择</span>
-        </div>
-        <button class="random-btn" onclick="randomPick()">✨ 随 机 选 择</button>
-        <p class="tip"> 点击选项编辑 | 长按分类可删除<br> 右上角 + 添加新分类</p>
-        <p class="sync-status" id="syncStatus"></p>
+<div class="container">
+  <h1>🎲 共享随机选择器</h1>
+
+  <!-- 分类选择 -->
+  <div class="categories-row">
+    <div class="categories" id="categoryBtns"></div>
+    <button class="add-cat-btn" onclick="addCategory()" title="添加新分类">+</button>
+  </div>
+
+  <!-- 选项网格 -->
+  <div class="options-grid" id="optionsGrid"></div>
+
+  <!-- 结果展示 -->
+  <div class="result-area">
+    <span class="result-text" id="resultText">点击下方按钮随机选择</span>
+  </div>
+
+  <button class="random-btn" onclick="randomPick()">✨ 随 机 选 择</button>
+  <p class="tip">💡 点击选项编辑 | 长按分类可删除<br>➕ 右上角添加新分类</p>
+  <p class="sync-status" id="syncStatus"></p>
+</div>
+
+<!-- 编辑/添加选项弹窗 -->
+<div class="modal-overlay" id="modalOverlay">
+  <div class="modal-box">
+    <h3 id="modalTitle">选项详情</h3>
+    <p class="subtitle" id="modalSubtitle"></p>
+    <label>名称</label>
+    <input type="text" id="modalName" placeholder="例如：麻辣烫">
+    <label>介绍（可选）</label>
+    <textarea id="modalDesc" placeholder="加一段描述..."></textarea>
+    <div class="modal-buttons">
+      <button class="btn-cancel" onclick="closeModal()">取消</button>
+      <button class="btn-confirm" onclick="confirmEdit()">保存</button>
     </div>
-    <!-- 编辑选项弹窗 -->
-    <div class="modal-overlay" id="modalOverlay">
-        <div class="modal-box">
-            <h3 id="modalTitle">选项详情</h3>
-            <p class="subtitle" id="modalSubtitle"></p>
-            <label>名称</label>
-            <input type="text" id="modalName" placeholder="选项名称">
-            <label>介绍</label>
-            <textarea id="modalDesc" placeholder="添加一段介绍..."></textarea>
-            <div class="modal-buttons">
-                <button class="btn-cancel" onclick="closeModal()">取消</button>
-                <button class="btn-confirm" onclick="confirmEdit()">保存</button>
-            </div>
-            <button class="btn-delete" id="btnDelete" onclick="deleteOption()"> 删除此选项</button>
-        </div>
+    <button class="btn-delete" id="btnDelete" onclick="deleteOption()">🗑️ 删除此选项</button>
+  </div>
+</div>
+
+<!-- 添加分类弹窗 -->
+<div class="modal-overlay" id="catModal">
+  <div class="modal-box">
+    <h3>✨ 新建分类</h3>
+    <p class="subtitle">例如：夜宵、零食、周末活动</p>
+    <label>分类名称</label>
+    <input type="text" id="catNameInput" placeholder="输入名称">
+    <div class="modal-buttons">
+      <button class="btn-cancel" onclick="closeCatModal()">取消</button>
+      <button class="btn-confirm" onclick="confirmAddCategory()">添加</button>
     </div>
-    <!-- 添加分类弹窗 -->
-    <div class="modal-overlay" id="catModal">
-        <div class="modal-box">
-            <h3>添加新分类</h3>
-            <p class="subtitle">输入分类名称（如：夜宵、零食）</p>
-            <label>分类名称</label>
-            <input type="text" id="catNameInput" placeholder="例如：夜宵">
-            <div class="modal-buttons">
-                <button class="btn-cancel" onclick="closeCatModal()">取消</button>
-                <button class="btn-confirm" onclick="confirmAddCategory()">添加</button>
-            </div>
-        </div>
+  </div>
+</div>
+
+<!-- Token 设置弹窗 -->
+<div class="modal-overlay" id="tokenModal">
+  <div class="modal-box">
+    <h3>🔐 首次同步设置</h3>
+    <p class="subtitle">连接 GitHub 实现多设备共享</p>
+    <div class="help-text">
+      📌 获取 Token：GitHub → Settings → Developer settings → Personal access tokens → Generate new token (classic)，勾选 <b>repo</b> 权限。<br>
+      <a href="https://github.com/settings/tokens" target="_blank">👉 点此快速获取 Token</a>
     </div>
-    <!-- Token 设置弹窗（首次使用） -->
-    <div class="modal-overlay" id="tokenModal">
-        <div class="modal-box">
-            <h3> 首次设置</h3>
-            <p class="subtitle">请输入你的 GitHub Token 以启用同步</p>
-            <div class="help-text">
-                获取方式：GitHub → Settings → Developer settings → Personal access tokens → Generate new token (classic)，勾选 <b>repo</b> 权限。<br>
-                <a href="https://github.com/settings/tokens" target="_blank"> 点此快速跳转</a>
-            </div>
-            <label>GitHub 用户名</label>
-            <input type="text" id="tokenUsername" placeholder="例如 dabai123">
-            <label>仓库名</label>
-            <input type="text" id="tokenRepo" placeholder="例如 dabai123.github.io">
-            <label>Token</label>
-            <input type="password" id="tokenInput" placeholder="ghp_xxxxxxxxxxx">
-            <div class="modal-buttons">
-                <button class="btn-cancel" onclick="skipToken()">跳过（仅本地使用）</button>
-                <button class="btn-confirm" onclick="saveToken()">保存并同步</button>
-            </div>
-        </div>
+    <label>GitHub 用户名</label>
+    <input type="text" id="tokenUsername" placeholder="例如 zhangsan">
+    <label>仓库名</label>
+    <input type="text" id="tokenRepo" placeholder="例如 my-data">
+    <label>Token</label>
+    <input type="password" id="tokenInput" placeholder="ghp_xxxx">
+    <div class="modal-buttons">
+      <button class="btn-cancel" onclick="skipToken()">跳过（仅本地）</button>
+      <button class="btn-confirm" onclick="saveToken()">保存并同步</button>
     </div>
-    <script>
-        // ============================================
-        // 配置（不包含敏感 Token）
-        // ============================================
-        const FILE_PATH = 'shared-data.json';
-        // ============================================
-        let GITHUB_USERNAME = '';
-        let REPO_NAME = '';
-        let GITHUB_TOKEN = '';
-        let API_URL = '';
-        let data = {};
-        let currentCategory = '';
-        let editingIndex = -1;
-        let fileSHA = '';
-        let syncEnabled = false;
-        function setStatus(msg, isError = false) {
-            const el = document.getElementById('syncStatus');
-            if (!el) return;
-            el.textContent = msg;
-            el.style.color = isError ? '#e05555' : '#4caf50';
-            if (!isError) setTimeout(() => { el.textContent = ''; }, 3000);
-        }
-        function loadTokenConfig() {
-            GITHUB_USERNAME = localStorage.getItem('gh_username') || '';
-            REPO_NAME = localStorage.getItem('gh_repo') || '';
-            GITHUB_TOKEN = localStorage.getItem('gh_token') || '';
-            if (GITHUB_USERNAME && REPO_NAME && GITHUB_TOKEN) {
-                API_URL = `https://api.github.com/repos/${GITHUB_USERNAME}/${REPO_NAME}/contents/${FILE_PATH}`;
-                syncEnabled = true;
-                return true;
-            }
-            return false;
-        }
-        async function loadFromCloud() {
-            if (!syncEnabled) {
-                loadLocalFallback();
-                return;
-            }
-            setStatus(' 加载中...');
-            try {
-                const response = await fetch(API_URL, {
-                    headers: { 'Authorization': `token ${GITHUB_TOKEN}` }
-                });
-                if (!response.ok) throw new Error('加载失败');
-                const json = await response.json();
-                fileSHA = json.sha;
-                const content = JSON.parse(atob(json.content));
-                data = content;
-                setStatus('✅ 已同步最新数据');
-                localStorage.setItem('sharedPickerBackup', JSON.stringify(data));
-            } catch (err) {
-                console.error(err);
-                setStatus('⚠️ 加载云端失败，使用本地缓存', true);
-                loadLocalFallback();
-            }
-            initApp();
-        }
-        function loadLocalFallback() {
-            const local = localStorage.getItem('sharedPickerBackup');
-            if (local) {
-                try { data = JSON.parse(local); } catch(e) {}
-            }
-            if (!data || Object.keys(data).length === 0) {
-                data = {
-                    '早餐': [{ name: '包子', desc: '热腾腾的鲜肉包' }, { name: '油条', desc: '酥脆金黄' }, { name: '豆浆', desc: '现磨香浓' }],
-                    '午餐': [{ name: '黄焖鸡', desc: '下饭神器' }, { name: '麻辣烫', desc: '随心搭配' }, { name: '盖浇饭', desc: '锅气十足' }],
-                    '晚餐': [{ name: '沙拉', desc: '低卡健康' }, { name: '火锅', desc: '热闹过瘾' }, { name: '烧烤', desc: '滋滋冒油' }]
-                };
-            }
-        }
-        async function saveToCloud() {
-            localStorage.setItem('sharedPickerBackup', JSON.stringify(data));
-            if (!syncEnabled) {
-                setStatus(' 已保存到本地（未配置同步）');
-                return;
-            }
-            setStatus('⏳ 同步中...');
-            try {
-                const content = btoa(unescape(encodeURIComponent(JSON.stringify(data, null, 2))));
-                const body = { message: '更新数据', content: content, sha: fileSHA };
-                const response = await fetch(API_URL, {
-                    method: 'PUT',
-                    headers: {
-                        'Authorization': `token ${GITHUB_TOKEN}`,
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify(body)
-                });
-                if (!response.ok) throw new Error('上传失败');
-                const json = await response.json();
-                fileSHA = json.content.sha;
-                setStatus('✅ 已同步到云端，家人刷新可见');
-            } catch (err) {
-                console.error(err);
-                setStatus('⚠️ 同步失败，数据已存本地', true);
-            }
-        }
-        function initApp() {
-            const cats = Object.keys(data);
-            if (cats.length === 0) {
-                data['默认'] = [{ name: '示例选项', desc: '点击编辑我' }];
-            }
-            if (!data[currentCategory]) {
-                currentCategory = Object.keys(data)[0];
-            }
-            renderCategories();
-            renderOptions();
-        }
-        function renderCategories() {
-            const container = document.getElementById('categoryBtns');
-            if (!container) return;
-            container.innerHTML = '';
-            Object.keys(data).forEach(cat => {
-                const btn = document.createElement('button');
-                btn.className = 'category-btn';
-                if (cat === currentCategory) btn.classList.add('active');
-                const label = document.createElement('span');
-                label.textContent = cat;
-                btn.appendChild(label);
-                // 删除分类按钮
-                const delBtn = document.createElement('span');
-                delBtn.className = 'delete-cat';
-                delBtn.textContent = '×';
-                delBtn.title = '删除分类';
-                delBtn.onclick = (e) => {
-                    e.stopPropagation();
-                    deleteCategory(cat);
-                };
-                btn.appendChild(delBtn);
-                btn.onclick = () => switchCategory(cat);
-                container.appendChild(btn);
-            });
-        }
-        function renderOptions() {
-            const grid = document.getElementById('optionsGrid');
-            if (!grid) return;
-            grid.innerHTML = '';
-            if (!data[currentCategory]) return;
-            data[currentCategory].forEach((item, index) => {
-                const div = document.createElement('div');
-                div.className = 'option-item';
-                const descPreview = item.desc ? item.desc.substring(0, 6) + (item.desc.length > 6 ? '…' : '') : '';
-                div.innerHTML = item.name + (descPreview ? `<span class="item-desc-preview">${descPreview}</span>` : '');
-                div.onclick = () => openEditModal(index);
-                grid.appendChild(div);
-            });
-            const addDiv = document.createElement('div');
-            addDiv.className = 'option-item add-btn';
-            addDiv.innerHTML = '+';
-            addDiv.onclick = () => openAddModal();
-            grid.appendChild(addDiv);
-        }
-        function switchCategory(cat) {
-            currentCategory = cat;
-            renderCategories();
-            renderOptions();
-            clearResult();
-        }
-        // ========== 添加分类 ==========
-        function addCategory() {
-            document.getElementById('catNameInput').value = '';
-            document.getElementById('catModal').classList.add('show');
-            setTimeout(() => document.getElementById('catNameInput').focus(), 200);
-        }
-        function closeCatModal() {
-            document.getElementById('catModal').classList.remove('show');
-        }
-        async function confirmAddCategory() {
-            const name = document.getElementById('catNameInput').value.trim();
-            if (!name) { alert('分类名称不能为空'); return; }
-            if (data[name]) { alert('该分类已存在'); return; }
-            data[name] = [];
-            currentCategory = name;
-            renderCategories();
-            renderOptions();
-            closeCatModal();
-            await saveToCloud();
-        }
-        // ========== 删除分类 ==========
-        async function deleteCategory(cat) {
-            const cats = Object.keys(data);
-            if (cats.length <= 1) {
-                alert('至少保留一个分类');
-                return;
-            }
-            if (!confirm(`确定要删除「${cat}」分类及其所有选项吗？此操作不可恢复。`)) return;
-            delete data[cat];
-            if (currentCategory === cat) {
-                currentCategory = Object.keys(data)[0];
-            }
-            renderCategories();
-            renderOptions();
-            clearResult();
-            await saveToCloud();
-        }
-        function clearResult() {
-            document.querySelectorAll('.option-item').forEach(el => el.classList.remove('highlight'));
-            const result = document.getElementById('resultText');
-            if (result) {
-                result.innerHTML = '点击下方按钮随机选择';
-                result.classList.remove('show');
-            }
-        }
-        function randomPick() {
-            if (!data[currentCategory] || data[currentCategory].length === 0) {
-                alert('当前分类还没有选项，请先添加');
-                return;
-            }
-            const options = data[currentCategory];
-            const randomIndex = Math.floor(Math.random() * options.length);
-            const picked = options[randomIndex];
-            document.querySelectorAll('.option-item').forEach(el => el.classList.remove('highlight'));
-            const items = document.querySelectorAll('.option-item');
-            if (items[randomIndex]) items[randomIndex].classList.add('highlight');
-            const result = document.getElementById('resultText');
-            if (result) {
-                let descHTML = picked.desc ? `<span class="result-desc">${picked.desc}</span>` : '';
-                result.innerHTML = ` ${currentCategory}：${picked.name}${descHTML}`;
-                result.classList.add('show');
-            }
-            const btn = document.querySelector('.random-btn');
-            if (btn) {
-                btn.style.transform = 'scale(0.94)';
-                setTimeout(() => { btn.style.transform = ''; }, 150);
-            }
-        }
-        function openEditModal(index) {
-            editingIndex = index;
-            const item = data[currentCategory][index];
-            document.getElementById('modalTitle').textContent = '编辑选项';
-            document.getElementById('modalSubtitle').textContent = `分类：${currentCategory}`;
-            document.getElementById('modalName').value = item.name;
-            document.getElementById('modalDesc').value = item.desc || '';
-            document.getElementById('btnDelete').style.display = 'block';
-            document.getElementById('modalOverlay').classList.add('show');
-            setTimeout(() => document.getElementById('modalName').focus(), 200);
-        }
-        function openAddModal() {
-            editingIndex = -1;
-            document.getElementById('modalTitle').textContent = '添加选项';
-            document.getElementById('modalSubtitle').textContent = `分类：${currentCategory}`;
-            document.getElementById('modalName').value = '';
-            document.getElementById('modalDesc').value = '';
-            document.getElementById('btnDelete').style.display = 'none';
-            document.getElementById('modalOverlay').classList.add('show');
-            setTimeout(() => document.getElementById('modalName').focus(), 200);
-        }
-        function closeModal() {
-            document.getElementById('modalOverlay').classList.remove('show');
-            editingIndex = -1;
-        }
-        async function confirmEdit() {
-            const name = document.getElementById('modalName').value.trim();
-            const desc = document.getElementById('modalDesc').value.trim();
-            if (!name) { alert('名称不能为空'); return; }
-            const newItem = { name, desc };
-            if (editingIndex >= 0) {
-                data[currentCategory][editingIndex] = newItem;
-            } else {
-                data[currentCategory].push(newItem);
-            }
-            renderOptions();
-            clearResult();
-            closeModal();
-            await saveToCloud();
-        }
-        async function deleteOption() {
-            if (editingIndex < 0) return;
-            if (!confirm(`确定要删除「${data[currentCategory][editingIndex].name}」吗？`)) return;
-            data[currentCategory].splice(editingIndex, 1);
-            renderOptions();
-            clearResult();
-            closeModal();
-            await saveToCloud();
-        }
-        function saveToken() {
-            const username = document.getElementById('tokenUsername').value.trim();
-            const repo = document.getElementById('tokenRepo').value.trim();
-            const token = document.getElementById('tokenInput').value.trim();
-            if (!username || !repo || !token) { alert('请填写所有字段'); return; }
-            localStorage.setItem('gh_username', username);
-            localStorage.setItem('gh_repo', repo);
-            localStorage.setItem('gh_token', token);
-            document.getElementById('tokenModal').classList.remove('show');
-            loadTokenConfig();
-            loadFromCloud();
-        }
-        function skipToken() {
-            document.getElementById('tokenModal').classList.remove('show');
-            syncEnabled = false;
-            loadLocalFallback();
-            initApp();
-            setStatus(' 仅本地使用，不会同步');
-        }
-        // 弹窗背景关闭
-        document.getElementById('modalOverlay').addEventListener('click', function(e) {
-            if (e.target === this) closeModal();
+  </div>
+</div>
+
+<script>
+  (function() {
+    // ---------- 配置 ----------
+    const FILE_PATH = 'shared-data.json';
+    let GITHUB_USERNAME = '';
+    let REPO_NAME = '';
+    let GITHUB_TOKEN = '';
+    let API_URL = '';
+    let data = {};
+    let currentCategory = '';
+    let editingIndex = -1;
+    let fileSHA = '';
+    let syncEnabled = false;
+
+    // ---------- DOM 元素 ----------
+    const categoryBtns = document.getElementById('categoryBtns');
+    const optionsGrid = document.getElementById('optionsGrid');
+    const resultText = document.getElementById('resultText');
+    const syncStatus = document.getElementById('syncStatus');
+    const modalOverlay = document.getElementById('modalOverlay');
+    const modalTitle = document.getElementById('modalTitle');
+    const modalSubtitle = document.getElementById('modalSubtitle');
+    const modalName = document.getElementById('modalName');
+    const modalDesc = document.getElementById('modalDesc');
+    const btnDelete = document.getElementById('btnDelete');
+    const catModal = document.getElementById('catModal');
+    const catNameInput = document.getElementById('catNameInput');
+    const tokenModal = document.getElementById('tokenModal');
+    const tokenUsername = document.getElementById('tokenUsername');
+    const tokenRepo = document.getElementById('tokenRepo');
+    const tokenInput = document.getElementById('tokenInput');
+
+    // ---------- 工具函数 ----------
+    function setStatus(msg, isError = false) {
+      if (!syncStatus) return;
+      syncStatus.textContent = msg;
+      syncStatus.style.color = isError ? '#e05555' : '#4caf50';
+      if (!isError) {
+        setTimeout(() => { if (syncStatus) syncStatus.textContent = ''; }, 3500);
+      }
+    }
+
+    function loadTokenConfig() {
+      GITHUB_USERNAME = localStorage.getItem('gh_username') || '';
+      REPO_NAME = localStorage.getItem('gh_repo') || '';
+      GITHUB_TOKEN = localStorage.getItem('gh_token') || '';
+      if (GITHUB_USERNAME && REPO_NAME && GITHUB_TOKEN) {
+        API_URL = `https://api.github.com/repos/${GITHUB_USERNAME}/${REPO_NAME}/contents/${FILE_PATH}`;
+        syncEnabled = true;
+        return true;
+      }
+      return false;
+    }
+
+    // 本地缓存
+    function loadLocalFallback() {
+      const local = localStorage.getItem('sharedPickerBackup');
+      if (local) {
+        try { data = JSON.parse(local); } catch (e) { data = {}; }
+      }
+      if (!data || Object.keys(data).length === 0) {
+        data = {
+          '🍳 早餐': [{ name: '包子', desc: '鲜肉包' }, { name: '油条', desc: '酥脆' }, { name: '豆浆', desc: '现磨' }],
+          '🍱 午餐': [{ name: '黄焖鸡', desc: '下饭' }, { name: '麻辣烫', desc: '自选' }, { name: '盖饭', desc: '锅气' }],
+          '🌙 晚餐': [{ name: '沙拉', desc: '轻食' }, { name: '火锅', desc: '过瘾' }, { name: '烧烤', desc: '滋滋' }]
+        };
+      }
+    }
+
+    async function loadFromCloud() {
+      if (!syncEnabled) {
+        loadLocalFallback();
+        initApp();
+        return;
+      }
+      setStatus('☁️ 加载云端数据...');
+      try {
+        const response = await fetch(API_URL, {
+          headers: { 'Authorization': `token ${GITHUB_TOKEN}` }
         });
-        document.getElementById('catModal').addEventListener('click', function(e) {
-            if (e.target === this) closeCatModal();
+        if (!response.ok) throw new Error('加载失败');
+        const json = await response.json();
+        fileSHA = json.sha;
+        const content = JSON.parse(atob(json.content));
+        data = content;
+        setStatus('✅ 已同步最新数据');
+        localStorage.setItem('sharedPickerBackup', JSON.stringify(data));
+      } catch (err) {
+        console.warn(err);
+        setStatus('⚠️ 云端加载失败，使用本地缓存', true);
+        loadLocalFallback();
+      }
+      initApp();
+    }
+
+    async function saveToCloud() {
+      localStorage.setItem('sharedPickerBackup', JSON.stringify(data));
+      if (!syncEnabled) {
+        setStatus('💾 已保存到本地');
+        return;
+      }
+      setStatus('⏳ 同步中...');
+      try {
+        const content = btoa(unescape(encodeURIComponent(JSON.stringify(data, null, 2))));
+        const body = { message: '更新随机选择器数据', content: content, sha: fileSHA };
+        const response = await fetch(API_URL, {
+          method: 'PUT',
+          headers: {
+            'Authorization': `token ${GITHUB_TOKEN}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify(body)
         });
-        document.getElementById('modalDesc').addEventListener('keydown', function(e) {
-            if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) confirmEdit();
-        });
-        document.getElementById('catNameInput').addEventListener('keydown', function(e) {
-            if (e.key === 'Enter') confirmAddCategory();
-        });
-        // ========== 启动 ==========
-        if (loadTokenConfig()) {
-            loadFromCloud();
-        } else {
-            loadLocalFallback();
-            initApp();
-            document.getElementById('tokenModal').classList.add('show');
-        }
-        if ('serviceWorker' in navigator) {
-            navigator.serviceWorker.register('sw.js')
-                .then(() => console.log('✅ SW 注册成功'))
-                .catch(err => console.log('SW 失败:', err));
-        }
-    </script>
+        if (!response.ok) throw new Error('上传失败');
+        const json = await response.json();
+        fileSHA = json.content.sha;
+        setStatus('✅ 已同步到云端，其他设备可更新');
+      } catch (err) {
+        console.error(err);
+        setStatus('❌ 同步失败，数据已存本地', true);
+      }
+    }
+
+    // ---------- 渲染 ----------
+    function renderCategories() {
+      if (!categoryBtns) return;
+      categoryBtns.innerHTML = '';
+      const categories = Object.keys(data);
+      if (categories.length === 0) {
+        data['默认'] = [{ name: '示例', desc: '点击编辑' }];
+        categories.push('默认');
+      }
+      if (!data[currentCategory] || !categories.includes(currentCategory)) {
+        currentCategory = categories[0];
+      }
+
+      categories.forEach(cat => {
+        const btn = document.createElement('button');
+        btn.className = 'category-btn';
+        if (cat === currentCategory) btn.classList.add('active');
+        btn.innerHTML = `<span>${cat}</span>`;
+
+        const delBtn = document.createElement('span');
+        delBtn.className = 'delete-cat';
+        delBtn.textContent = '×';
+        delBtn.onclick = (e) => {
+          e.stopPropagation();
+          deleteCategory(cat);
+        };
+        btn.appendChild(delBtn);
+        btn.onclick = () => switchCategory(cat);
+        categoryBtns.appendChild(btn);
+      });
+    }
+
+    function renderOptions() {
+      if (!optionsGrid) return;
+      optionsGrid.innerHTML = '';
+      const items = data[currentCategory] || [];
+      items.forEach((item, index) => {
+        const div = document.createElement('div');
+        div.className = 'option-item';
+        const descPreview = item.desc ? item.desc.substring(0, 6) + (item.desc.length > 6 ? '…' : '') : '';
+        div.innerHTML = `${item.name}${descPreview ? `<span class="item-desc-preview">${descPreview}</span>` : ''}`;
+        div.onclick = () => openEditModal(index);
+        optionsGrid.appendChild(div);
+      });
+
+      const addDiv = document.createElement('div');
+      addDiv.className = 'option-item add-btn';
+      addDiv.innerHTML = '+';
+      addDiv.onclick = () => openAddModal();
+      optionsGrid.appendChild(addDiv);
+    }
+
+    function switchCategory(cat) {
+      currentCategory = cat;
+      renderCategories();
+      renderOptions();
+      clearResult();
+    }
+
+    function clearResult() {
+      document.querySelectorAll('.option-item').forEach(el => el.classList.remove('highlight'));
+      if (resultText) {
+        resultText.innerHTML = '点击下方按钮随机选择';
+        resultText.classList.remove('show');
+      }
+    }
+
+    // ---------- 随机选择 ----------
+    function randomPick() {
+      const items = data[currentCategory];
+      if (!items || items.length === 0) {
+        alert('当前分类没有选项，请先添加');
+        return;
+      }
+      const randomIndex = Math.floor(Math.random() * items.length);
+      const picked = items[randomIndex];
+
+      document.querySelectorAll('.option-item').forEach(el => el.classList.remove('highlight'));
+      const optionElements = document.querySelectorAll('.option-item');
+      if (optionElements[randomIndex]) {
+        optionElements[randomIndex].classList.add('highlight');
+      }
+
+      if (resultText) {
+        let descHTML = picked.desc ? `<span class="result-desc">${picked.desc}</span>` : '';
+        resultText.innerHTML = `🎉 ${currentCategory}：${picked.name}${descHTML}`;
+        resultText.classList.add('show');
+      }
+
+      const btn = document.querySelector('.random-btn');
+      if (btn) {
+        btn.style.transform = 'scale(0.94)';
+        setTimeout(() => { if (btn) btn.style.transform = ''; }, 150);
+      }
+    }
+
+    // ---------- 弹窗操作 ----------
+    function openEditModal(index) {
+      editingIndex = index;
+      const item = data[currentCategory][index];
+      modalTitle.textContent = '编辑选项';
+      modalSubtitle.textContent = `分类：${currentCategory}`;
+      modalName.value = item.name || '';
+      modalDesc.value = item.desc || '';
+      btnDelete.style.display = 'block';
+      modalOverlay.classList.add('show');
+      setTimeout(() => modalName.focus(), 150);
+    }
+
+    function openAddModal() {
+      editingIndex = -1;
+      modalTitle.textContent = '添加选项';
+      modalSubtitle.textContent = `分类：${currentCategory}`;
+      modalName.value = '';
+      modalDesc.value = '';
+      btnDelete.style.display = 'none';
+      modalOverlay.classList.add('show');
+      setTimeout(() => modalName.focus(), 150);
+    }
+
+    function closeModal() {
+      modalOverlay.classList.remove('show');
+      editingIndex = -1;
+    }
+
+    async function confirmEdit() {
+      const name = modalName.value.trim();
+      const desc = modalDesc.value.trim();
+      if (!name) {
+        alert('名称不能为空');
+        return;
+      }
+      const newItem = { name, desc };
+      if (editingIndex >= 0) {
+        data[currentCategory][editingIndex] = newItem;
+      } else {
+        data[currentCategory].push(newItem);
+      }
+      renderOptions();
+      clearResult();
+      closeModal();
+      await saveToCloud();
+    }
+
+    async function deleteOption() {
+      if (editingIndex < 0) return;
+      if (!confirm(`确定删除「${data[currentCategory][editingIndex].name}」吗？`)) return;
+      data[currentCategory].splice(editingIndex, 1);
+      renderOptions();
+      clearResult();
+      closeModal();
+      await saveToCloud();
+    }
+
+    // 分类操作
+    function addCategory() {
+      catNameInput.value = '';
+      catModal.classList.add('show');
+      setTimeout(() => catNameInput.focus(), 150);
+    }
+
+    function closeCatModal() {
+      catModal.classList.remove('show');
+    }
+
+    async function confirmAddCategory() {
+      const name = catNameInput.value.trim();
+      if (!name) { alert('分类名称不能为空'); return; }
+      if (data[name]) { alert('该分类已存在'); return; }
+      data[name] = [];
+      currentCategory = name;
+      renderCategories();
+      renderOptions();
+      closeCatModal();
+      await saveToCloud();
+    }
+
+    async function deleteCategory(cat) {
+      const cats = Object.keys(data);
+      if (cats.length <= 1) {
+        alert('至少保留一个分类');
+        return;
+      }
+      if (!confirm(`确定删除分类「${cat}」及其所有选项吗？`)) return;
+      delete data[cat];
+      if (currentCategory === cat) {
+        currentCategory = Object.keys(data)[0];
+      }
+      renderCategories();
+      renderOptions();
+      clearResult();
+      await saveToCloud();
+    }
+
+    // Token 相关
+    function saveToken() {
+      const username = tokenUsername.value.trim();
+      const repo = tokenRepo.value.trim();
+      const token = tokenInput.value.trim();
+      if (!username || !repo || !token) {
+        alert('请填写所有字段');
+        return;
+      }
+      localStorage.setItem('gh_username', username);
+      localStorage.setItem('gh_repo', repo);
+      localStorage.setItem('gh_token', token);
+      tokenModal.classList.remove('show');
+      loadTokenConfig();
+      loadFromCloud();
+    }
+
+    function skipToken() {
+      tokenModal.classList.remove('show');
+      syncEnabled = false;
+      loadLocalFallback();
+      initApp();
+      setStatus('📦 仅本地模式');
+    }
+
+    function initApp() {
+      const cats = Object.keys(data);
+      if (cats.length === 0) {
+        data['默认'] = [{ name: '示例', desc: '点击编辑' }];
+      }
+      if (!data[currentCategory]) {
+        currentCategory = cats[0] || '默认';
+      }
+      renderCategories();
+      renderOptions();
+    }
+
+    // 事件绑定
+    modalOverlay.addEventListener('click', (e) => {
+      if (e.target === modalOverlay) closeModal();
+    });
+    catModal.addEventListener('click', (e) => {
+      if (e.target === catModal) closeCatModal();
+    });
+    modalDesc.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) confirmEdit();
+    });
+    catNameInput.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') confirmAddCategory();
+    });
+
+    // 启动
+    if (loadTokenConfig()) {
+      loadFromCloud();
+    } else {
+      loadLocalFallback();
+      initApp();
+      tokenModal.classList.add('show');
+    }
+
+    // 暴露全局函数
+    window.randomPick = randomPick;
+    window.addCategory = addCategory;
+    window.closeModal = closeModal;
+    window.confirmEdit = confirmEdit;
+    window.deleteOption = deleteOption;
+    window.closeCatModal = closeCatModal;
+    window.confirmAddCategory = confirmAddCategory;
+    window.saveToken = saveToken;
+    window.skipToken = skipToken;
+
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('sw.js')
+        .then(() => console.log('SW registered'))
+        .catch(() => console.log('SW registration failed'));
+    }
+  })();
+</script>
 </body>
 </html>
-
