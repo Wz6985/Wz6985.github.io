@@ -108,8 +108,9 @@
         .result-area { text-align: center; margin-bottom: 18px; min-height: 55px; display: flex; align-items: center; justify-content: center; }
 
         .result-text {
-            font-size: 20px; font-weight: 700; color: #333; padding: 12px 20px;
+            font-size: 18px; font-weight: 700; color: #333; padding: 12px 20px;
             background: #f8f9ff; border-radius: 12px; transition: all 0.3s ease; text-align: center;
+            max-width: 100%; word-break: break-all;
         }
 
         .result-text.show {
@@ -117,6 +118,41 @@
         }
 
         .result-desc { display: block; font-size: 13px; font-weight: 400; margin-top: 4px; opacity: 0.8; }
+
+        /* 数量选择器 */
+        .count-selector {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            margin-bottom: 15px;
+            justify-content: center;
+        }
+
+        .count-label {
+            font-size: 14px;
+            color: #888;
+            font-weight: 500;
+        }
+
+        .count-btn {
+            width: 38px;
+            height: 38px;
+            border-radius: 10px;
+            border: 2px solid #e0e0e0;
+            background: white;
+            font-size: 15px;
+            font-weight: 600;
+            color: #666;
+            cursor: pointer;
+            transition: all 0.2s;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        .count-btn.active {
+            background: #667eea;
+            color: white;
+            border-color: #667eea;
+        }
 
         .random-btn {
             width: 100%; padding: 16px; border: none; border-radius: 16px;
@@ -198,7 +234,7 @@
 </head>
 <body>
     <div class="container">
-        <h1>🎲 兔子御用菜单</h1>
+        <h1>🎲 共享随机选择器</h1>
 
         <div class="categories-wrapper">
             <div class="categories" id="categoryBtns"></div>
@@ -207,10 +243,21 @@
 
         <div class="options-grid" id="optionsGrid"></div>
         <div class="result-area">
-            <span class="result-text" id="resultText">点击下方按钮随机选择</span>
+            <span class="result-text" id="resultText">点击选项查看介绍 | 双击编辑</span>
         </div>
+
+        <!-- 数量选择器 -->
+        <div class="count-selector">
+            <span class="count-label">随机数量：</span>
+            <button class="count-btn active" id="count1" onclick="setCount(1)">1</button>
+            <button class="count-btn" id="count2" onclick="setCount(2)">2</button>
+            <button class="count-btn" id="count3" onclick="setCount(3)">3</button>
+            <button class="count-btn" id="count4" onclick="setCount(4)">4</button>
+            <button class="count-btn" id="count5" onclick="setCount(5)">5</button>
+        </div>
+
         <button class="random-btn" onclick="randomPick()">✨ 随 机 选 择</button>
-        <p class="tip">👆 点击选项编辑 | 长按分类可删除<br>💡 右侧 + 添加新分类 | 修改自动同步</p>
+        <p class="tip">👆 点击选项查看介绍 | 再次点击编辑<br>💡 右侧 + 添加新分类 | 修改自动同步</p>
         <p class="sync-status" id="syncStatus"></p>
         <button class="reset-btn" onclick="if(confirm('确定要重置所有数据吗？此操作不可恢复。')){localStorage.clear();location.reload();}">⚠️ 重置本地数据</button>
     </div>
@@ -281,6 +328,7 @@
         let editingIndex = -1;
         let fileSHA = '';
         let syncEnabled = false;
+        let pickCount = 1;
 
         function setStatus(msg, isError) {
             const el = document.getElementById('syncStatus');
@@ -288,6 +336,14 @@
             el.textContent = msg;
             el.style.color = isError ? '#e05555' : '#4caf50';
             if (!isError) setTimeout(function() { el.textContent = ''; }, 3000);
+        }
+
+        function setCount(n) {
+            pickCount = n;
+            document.querySelectorAll('.count-btn').forEach(function(btn) {
+                btn.classList.remove('active');
+            });
+            document.getElementById('count' + n).classList.add('active');
         }
 
         function loadTokenConfig() {
@@ -318,7 +374,7 @@
                 const json = await response.json();
                 fileSHA = json.sha;
                 
-                // ✅ 修复：正确解码 UTF-8 中文
+                // UTF-8 解码
                 const binaryStr = atob(json.content);
                 const bytes = new Uint8Array(binaryStr.length);
                 for (let i = 0; i < binaryStr.length; i++) {
@@ -363,7 +419,7 @@
             
             setStatus('⏳ 同步中...');
             try {
-                // ✅ 修复：正确编码 UTF-8 中文为 Base64
+                // UTF-8 编码
                 const jsonStr = JSON.stringify(data, null, 2);
                 const encoder = new TextEncoder();
                 const bytes = encoder.encode(jsonStr);
@@ -445,7 +501,31 @@
                 div.className = 'option-item';
                 const descPreview = item.desc ? item.desc.substring(0, 6) + (item.desc.length > 6 ? '…' : '') : '';
                 div.innerHTML = item.name + (descPreview ? '<span class="item-desc-preview">' + descPreview + '</span>' : '');
-                div.onclick = function() { openEditModal(index); };
+                
+                // 点击查看介绍，再次点击编辑
+                div.onclick = function() {
+                    // 先高亮当前选项
+                    document.querySelectorAll('.option-item').forEach(function(el) { el.classList.remove('highlight'); });
+                    this.classList.add('highlight');
+                    
+                    // 显示介绍
+                    const item = data[currentCategory][index];
+                    const result = document.getElementById('resultText');
+                    if (result) {
+                        let html = '📋 ' + item.name;
+                        if (item.desc) html += '<span class="result-desc">' + item.desc + '</span>';
+                        html += '<span class="result-desc" style="color:#667eea;margin-top:6px;">👆 再次点击可编辑</span>';
+                        result.innerHTML = html;
+                        result.classList.add('show');
+                    }
+                    
+                    // 800毫秒内再次点击同一个，打开编辑
+                    if (this._lastClick && Date.now() - this._lastClick < 800) {
+                        openEditModal(index);
+                    }
+                    this._lastClick = Date.now();
+                };
+                
                 grid.appendChild(div);
             });
 
@@ -508,7 +588,7 @@
             document.querySelectorAll('.option-item').forEach(function(el) { el.classList.remove('highlight'); });
             const result = document.getElementById('resultText');
             if (result) {
-                result.innerHTML = '点击下方按钮随机选择';
+                result.innerHTML = '点击选项查看介绍 | 双击编辑';
                 result.classList.remove('show');
             }
         }
@@ -519,20 +599,44 @@
                 return;
             }
             const options = data[currentCategory];
-            const randomIndex = Math.floor(Math.random() * options.length);
-            const picked = options[randomIndex];
-
+            const total = options.length;
+            
+            // 如果选项不够，调整数量
+            let count = Math.min(pickCount, total);
+            
+            // 随机抽取 count 个不重复的选项
+            const shuffled = options.slice();
+            for (let i = shuffled.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+            }
+            const picked = shuffled.slice(0, count);
+            
+            // 清除高亮
             document.querySelectorAll('.option-item').forEach(function(el) { el.classList.remove('highlight'); });
+            
+            // 高亮选中的选项
             const items = document.querySelectorAll('.option-item');
-            if (items[randomIndex]) items[randomIndex].classList.add('highlight');
-
+            picked.forEach(function(p) {
+                const idx = options.indexOf(p);
+                if (idx >= 0 && items[idx]) {
+                    items[idx].classList.add('highlight');
+                }
+            });
+            
+            // 显示结果
             const result = document.getElementById('resultText');
             if (result) {
-                let descHTML = picked.desc ? '<span class="result-desc">' + picked.desc + '</span>' : '';
-                result.innerHTML = '🎉 ' + currentCategory + '：' + picked.name + descHTML;
+                let html = '🎉 ' + currentCategory + '：';
+                picked.forEach(function(p, i) {
+                    html += p.name;
+                    if (p.desc) html += '<span class="result-desc">' + p.desc + '</span>';
+                    if (i < picked.length - 1) html += '、';
+                });
+                result.innerHTML = html;
                 result.classList.add('show');
             }
-
+            
             const btn = document.querySelector('.random-btn');
             if (btn) {
                 btn.style.transform = 'scale(0.94)';
