@@ -317,7 +317,16 @@
                 if (!response.ok) throw new Error('加载失败');
                 const json = await response.json();
                 fileSHA = json.sha;
-                const content = JSON.parse(atob(json.content));
+                
+                // ✅ 修复：正确解码 UTF-8 中文
+                const binaryStr = atob(json.content);
+                const bytes = new Uint8Array(binaryStr.length);
+                for (let i = 0; i < binaryStr.length; i++) {
+                    bytes[i] = binaryStr.charCodeAt(i);
+                }
+                const decoder = new TextDecoder();
+                const content = JSON.parse(decoder.decode(bytes));
+                
                 data = content;
                 setStatus('✅ 已同步最新数据');
                 localStorage.setItem('sharedPickerBackup', JSON.stringify(data));
@@ -354,7 +363,16 @@
             
             setStatus('⏳ 同步中...');
             try {
-                const content = btoa(unescape(encodeURIComponent(JSON.stringify(data, null, 2))));
+                // ✅ 修复：正确编码 UTF-8 中文为 Base64
+                const jsonStr = JSON.stringify(data, null, 2);
+                const encoder = new TextEncoder();
+                const bytes = encoder.encode(jsonStr);
+                let binary = '';
+                for (let i = 0; i < bytes.length; i++) {
+                    binary += String.fromCharCode(bytes[i]);
+                }
+                const content = btoa(binary);
+                
                 const body = { message: '更新数据', content: content, sha: fileSHA };
                 
                 const response = await fetch(API_URL, {
