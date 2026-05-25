@@ -7,7 +7,7 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="随机选择器">
-  <link rel="manifest" href="data:application/manifest+json,{"name":"随机选择器","short_name":"选择器","start_url":".","display":"standalone","background_color":"#f5f5f5","theme_color":"#4A90D9","icons":[{"src":"data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🎲</text></svg>","sizes":"any","type":"image/svg+xml"}]}">
+  <link rel="manifest" href="data:application/manifest+json,{"name":"随机选择器","short_name":"选择器","start_url":".","display":"standalone","background_color":"#f5f5f5","theme_color":"#4A90D9","icons":[{"src":"data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🔐</text></svg>","sizes":"any","type":"image/svg+xml"}]}">
   <title>🍽️ 随机选择器 - PWA</title>
   <style>
     * {
@@ -323,26 +323,74 @@
       margin-top: 10px;
     }
 
-    .github-config {
-      font-size: 0.85em;
-      color: #666;
-      margin-top: 10px;
-      text-align: center;
-    }
-
-    .github-config input {
-      margin-top: 5px;
-      text-align: center;
-    }
-
     .hidden {
       display: none !important;
     }
 
-    .help-text {
-      font-size: 0.75em;
-      color: #888;
-      margin-top: 5px;
+    /* 密码验证页面样式 */
+    .password-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 9999;
+      padding: 20px;
+    }
+
+    .password-card {
+      background: white;
+      border-radius: 20px;
+      padding: 40px 30px;
+      width: 100%;
+      max-width: 400px;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+      text-align: center;
+    }
+
+    .password-card h2 {
+      font-size: 1.8em;
+      margin-bottom: 10px;
+      color: #333;
+    }
+
+    .password-card .lock-icon {
+      font-size: 3em;
+      margin-bottom: 15px;
+    }
+
+    .password-card p {
+      color: #666;
+      margin-bottom: 25px;
+      font-size: 0.9em;
+    }
+
+    .password-card input {
+      width: 100%;
+      padding: 15px;
+      border: 2px solid #e0e0e0;
+      border-radius: 25px;
+      font-size: 1.1em;
+      text-align: center;
+      letter-spacing: 3px;
+      outline: none;
+      transition: border 0.3s;
+      margin-bottom: 15px;
+    }
+
+    .password-card input:focus {
+      border-color: #667eea;
+    }
+
+    .password-card .error-msg {
+      color: #F44336;
+      font-size: 0.85em;
+      margin-bottom: 10px;
+      min-height: 20px;
     }
 
     @media (max-width: 400px) {
@@ -358,102 +406,160 @@
   </style>
 </head>
 <body>
-  <div class="container">
-    <div class="app-header">
-      <h1>🎲 随机选择器</h1>
-      <div class="sync-status">
-        <span class="sync-indicator" id="syncIndicator"></span>
-        <span id="syncText">准备同步</span>
-      </div>
-    </div>
-
-    <!-- 分类选择 -->
-    <div class="card">
-      <div class="category-selector" id="categorySelector">
-        <!-- 动态生成分类按钮 -->
-      </div>
-      <button class="btn btn-secondary" onclick="showAddCategoryModal()" style="width:100%; margin-top:10px;">
-        ➕ 添加分类
-      </button>
-    </div>
-
-    <!-- 随机结果展示 -->
-    <div class="card">
-      <div class="result-display" id="resultDisplay" onclick="showItemDetail()">
-        <span class="placeholder">点击下方按钮随机选择</span>
-      </div>
-      <div class="btn-group">
-        <button class="btn btn-primary" onclick="randomSelect()">🎯 随机选择</button>
-        <button class="btn btn-secondary" onclick="clearResult()">🔄 清除</button>
-      </div>
-    </div>
-
-    <!-- 选项列表 -->
-    <div class="card">
-      <h3 style="margin-bottom: 10px;">📋 <span id="currentCategoryLabel">选项列表</span></h3>
-      <div class="items-list" id="itemsList">
-        <!-- 动态生成选项 -->
-      </div>
-      <div class="add-section">
-        <div class="input-group">
-          <input type="text" id="newItemName" placeholder="选项名称" maxlength="50">
-        </div>
-        <div class="input-group">
-          <input type="text" id="newItemDesc" placeholder="简介(可选)" maxlength="200">
-        </div>
-        <button class="btn btn-primary" onclick="addItem()" style="min-width:60px;">➕</button>
-      </div>
-    </div>
-
-    <!-- GitHub 配置卡片 -->
-    <div class="card">
-      <details>
-        <summary style="font-weight:600; cursor:pointer; color:#667eea;">⚙️ GitHub 同步设置</summary>
-        <div class="github-config" style="margin-top:15px;">
-          <p style="margin-bottom:10px;">使用 GitHub Gist 实现多人自动同步</p>
-          
-          <label style="display:block; text-align:left; margin-bottom:5px; font-weight:600;">🔑 GitHub Token</label>
-          <input type="password" id="gistToken" placeholder="输入你的 GitHub Personal Access Token" style="width:100%; margin-bottom:12px;">
-          <div class="help-text" style="text-align:left; margin-bottom:12px;">
-            需要 gist 权限。如果没有Token，<a href="https://github.com/settings/tokens" target="_blank" style="color:#667eea;">点此创建</a>
-          </div>
-          
-          <label style="display:block; text-align:left; margin-bottom:5px; font-weight:600;">📋 Gist ID</label>
-          <input type="text" id="gistId" placeholder="输入已有的 Gist ID，或留空自动创建" style="width:100%; margin-bottom:15px;">
-          
-          <div class="btn-group">
-            <button class="btn btn-primary" onclick="saveGitHubConfig()">💾 保存配置</button>
-            <button class="btn btn-secondary" onclick="syncNow()">🔄 立即同步</button>
-          </div>
-          
-          <div id="configStatus" style="margin-top:10px; font-size:0.85em;"></div>
-        </div>
-      </details>
+  <!-- 密码验证层（仅首次访问时显示） -->
+  <div class="password-overlay hidden" id="passwordOverlay">
+    <div class="password-card">
+      <div class="lock-icon">🔐</div>
+      <h2>首次访问验证</h2>
+      <p>请输入密码以访问应用<br><span style="font-size:0.8em; color:#888;">（仅需输入一次，以后自动登录）</span></p>
+      <input type="password" id="passwordInput" placeholder="请输入密码" maxlength="20" autofocus>
+      <div class="error-msg" id="passwordError"></div>
+      <button class="btn btn-primary" onclick="verifyPassword()" style="width:100%;">🔓 验证并记住</button>
     </div>
   </div>
 
-  <!-- 选项详情弹窗 -->
-  <div class="modal-overlay hidden" id="detailModal">
-    <div class="modal">
-      <h3 id="detailTitle">选项详情</h3>
-      <p id="detailDesc" style="color:#666; margin-bottom:15px;"></p>
-      <button class="btn btn-primary" onclick="closeDetailModal()" style="width:100%;">关闭</button>
-    </div>
-  </div>
+  <!-- 主应用内容（默认隐藏） -->
+  <div id="mainApp" class="hidden">
+    <div class="container">
+      <div class="app-header">
+        <h1>🎲 随机选择器</h1>
+        <div class="sync-status">
+          <span class="sync-indicator" id="syncIndicator"></span>
+          <span id="syncText">准备同步</span>
+        </div>
+      </div>
 
-  <!-- 添加分类弹窗 -->
-  <div class="modal-overlay hidden" id="categoryModal">
-    <div class="modal">
-      <h3>添加新分类</h3>
-      <input type="text" id="newCategoryName" placeholder="分类名称，如：早餐" maxlength="20">
-      <div class="btn-group">
-        <button class="btn btn-primary" onclick="addCategory()">✅ 添加</button>
-        <button class="btn btn-secondary" onclick="closeCategoryModal()">取消</button>
+      <!-- 分类选择 -->
+      <div class="card">
+        <div class="category-selector" id="categorySelector">
+          <!-- 动态生成分类按钮 -->
+        </div>
+        <button class="btn btn-secondary" onclick="showAddCategoryModal()" style="width:100%; margin-top:10px;">
+          ➕ 添加分类
+        </button>
+      </div>
+
+      <!-- 随机结果展示 -->
+      <div class="card">
+        <div class="result-display" id="resultDisplay" onclick="showItemDetail()">
+          <span class="placeholder">点击下方按钮随机选择</span>
+        </div>
+        <div class="btn-group">
+          <button class="btn btn-primary" onclick="randomSelect()">🎯 随机选择</button>
+          <button class="btn btn-secondary" onclick="clearResult()">🔄 清除</button>
+        </div>
+      </div>
+
+      <!-- 选项列表 -->
+      <div class="card">
+        <h3 style="margin-bottom: 10px;">📋 <span id="currentCategoryLabel">选项列表</span></h3>
+        <div class="items-list" id="itemsList">
+          <!-- 动态生成选项 -->
+        </div>
+        <div class="add-section">
+          <div class="input-group">
+            <input type="text" id="newItemName" placeholder="选项名称" maxlength="50">
+          </div>
+          <div class="input-group">
+            <input type="text" id="newItemDesc" placeholder="简介(可选)" maxlength="200">
+          </div>
+          <button class="btn btn-primary" onclick="addItem()" style="min-width:60px;">➕</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- 选项详情弹窗 -->
+    <div class="modal-overlay hidden" id="detailModal">
+      <div class="modal">
+        <h3 id="detailTitle">选项详情</h3>
+        <p id="detailDesc" style="color:#666; margin-bottom:15px;"></p>
+        <button class="btn btn-primary" onclick="closeDetailModal()" style="width:100%;">关闭</button>
+      </div>
+    </div>
+
+    <!-- 添加分类弹窗 -->
+    <div class="modal-overlay hidden" id="categoryModal">
+      <div class="modal">
+        <h3>添加新分类</h3>
+        <input type="text" id="newCategoryName" placeholder="分类名称，如：早餐" maxlength="20">
+        <div class="btn-group">
+          <button class="btn btn-primary" onclick="addCategory()">✅ 添加</button>
+          <button class="btn btn-secondary" onclick="closeCategoryModal()">取消</button>
+        </div>
       </div>
     </div>
   </div>
 
   <script>
+    // ==================== 配置 ====================
+    const CORRECT_PASSWORD = '123654';
+    const AUTH_STORAGE_KEY = 'randomPickerAuthenticated';
+    
+    // GitHub 配置（直接写在代码中）
+    const GITHUB_CONFIG = {
+      token: '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', // 请替换为你的 GitHub Token
+      gistId: '' // 留空会自动创建，或填入已有的 Gist ID
+    };
+
+    // ==================== 密码验证 ====================
+    function checkAuthentication() {
+      // 检查 localStorage 中是否有验证标记
+      const isAuthenticated = localStorage.getItem(AUTH_STORAGE_KEY) === 'true';
+      
+      if (isAuthenticated) {
+        // 已验证过，直接显示应用
+        document.getElementById('passwordOverlay').classList.add('hidden');
+        document.getElementById('mainApp').classList.remove('hidden');
+        initApp();
+      } else {
+        // 首次访问，显示密码输入界面
+        document.getElementById('passwordOverlay').classList.remove('hidden');
+        document.getElementById('mainApp').classList.add('hidden');
+        document.getElementById('passwordInput').focus();
+      }
+    }
+    
+    function verifyPassword() {
+      const input = document.getElementById('passwordInput');
+      const errorMsg = document.getElementById('passwordError');
+      const password = input.value.trim();
+      
+      if (password === CORRECT_PASSWORD) {
+        // 密码正确，保存验证状态到 localStorage（永久记住）
+        localStorage.setItem(AUTH_STORAGE_KEY, 'true');
+        
+        // 隐藏密码层，显示应用
+        document.getElementById('passwordOverlay').classList.add('hidden');
+        document.getElementById('mainApp').classList.remove('hidden');
+        
+        // 初始化应用
+        initApp();
+      } else {
+        // 密码错误
+        errorMsg.textContent = '❌ 密码错误，请重试';
+        input.value = '';
+        input.focus();
+        
+        // 震动效果
+        input.style.borderColor = '#F44336';
+        setTimeout(() => {
+          input.style.borderColor = '#e0e0e0';
+        }, 1000);
+      }
+    }
+    
+    // 支持回车键提交密码
+    document.addEventListener('DOMContentLoaded', function() {
+      document.getElementById('passwordInput').addEventListener('keypress', function(e) {
+        if (e.key === 'Enter') {
+          verifyPassword();
+        }
+      });
+      
+      // 检查验证状态
+      checkAuthentication();
+    });
+
     // ==================== 应用状态 ====================
     const DEFAULT_CATEGORIES = ['早餐', '午餐', '晚餐'];
     let appData = {
@@ -461,7 +567,6 @@
       items: {}
     };
     
-    // 初始化每个分类的空数组
     DEFAULT_CATEGORIES.forEach(cat => {
       appData.items[cat] = [];
     });
@@ -469,26 +574,25 @@
     let currentCategory = DEFAULT_CATEGORIES[0];
     let selectedItem = null;
     let syncConfig = {
-      token: '',
+      token: GITHUB_CONFIG.token,
       gistId: ''
     };
     let syncTimer = null;
     let isSyncing = false;
 
-    // ==================== 初始化 ====================
-    function init() {
+    // ==================== 初始化应用 ====================
+    function initApp() {
       loadLocalData();
       loadSyncConfig();
       renderCategories();
       renderItems();
       
-      // 显示配置状态
-      updateConfigStatus();
-      
-      // 如果有GitHub配置，尝试初始同步
       if (syncConfig.token && syncConfig.gistId) {
         updateSyncStatus('ready', '已配置同步');
         syncFromGist(true);
+      } else if (syncConfig.token && !syncConfig.gistId) {
+        updateSyncStatus('ready', '首次使用，将自动创建同步');
+        createNewGist();
       } else {
         updateSyncStatus('ready', '未配置同步');
       }
@@ -518,31 +622,19 @@
     }
 
     function loadSyncConfig() {
-      const saved = localStorage.getItem('randomPickerSyncConfig');
+      const saved = localStorage.getItem('randomPickerGistId');
       if (saved) {
-        try {
-          syncConfig = JSON.parse(saved);
-          // 回填到输入框
-          document.getElementById('gistToken').value = syncConfig.token || '';
-          document.getElementById('gistId').value = syncConfig.gistId || '';
-        } catch (e) {
-          console.error('加载同步配置失败', e);
-        }
+        syncConfig.gistId = saved;
+      }
+      // 也检查代码中的默认值
+      if (!syncConfig.gistId && GITHUB_CONFIG.gistId) {
+        syncConfig.gistId = GITHUB_CONFIG.gistId;
       }
     }
 
     function saveSyncConfigToStorage() {
-      localStorage.setItem('randomPickerSyncConfig', JSON.stringify(syncConfig));
-    }
-
-    function updateConfigStatus() {
-      const statusDiv = document.getElementById('configStatus');
-      if (syncConfig.token && syncConfig.gistId) {
-        statusDiv.innerHTML = '<span style="color:#4CAF50;">✅ 同步已配置并启用</span>';
-      } else if (syncConfig.token) {
-        statusDiv.innerHTML = '<span style="color:#FFC107;">⚠️ Token已保存，但缺少Gist ID</span>';
-      } else {
-        statusDiv.innerHTML = '<span style="color:#888;">💡 输入Token和Gist ID后开始同步</span>';
+      if (syncConfig.gistId) {
+        localStorage.setItem('randomPickerGistId', syncConfig.gistId);
       }
     }
 
@@ -782,7 +874,6 @@
       document.getElementById('categoryModal').classList.add('hidden');
     }
 
-    // 点击弹窗外部关闭
     window.addEventListener('click', function(e) {
       if (e.target.classList.contains('modal-overlay')) {
         e.target.classList.add('hidden');
@@ -790,35 +881,9 @@
     });
 
     // ==================== GitHub 同步 ====================
-    function saveGitHubConfig() {
-      const tokenInput = document.getElementById('gistToken');
-      const gistIdInput = document.getElementById('gistId');
-      const token = tokenInput.value.trim();
-      const gistId = gistIdInput.value.trim();
-      
-      if (!token) {
-        alert('请输入 GitHub Token');
-        return;
-      }
-      
-      syncConfig.token = token;
-      syncConfig.gistId = gistId;
-      
-      saveSyncConfigToStorage();
-      updateConfigStatus();
-      
-      if (token && gistId) {
-        updateSyncStatus('ready', '配置已保存');
-        syncFromGist(true);
-      } else if (token && !gistId) {
-        // 自动创建Gist
-        createNewGist();
-      }
-    }
-
     async function createNewGist() {
       if (!syncConfig.token) {
-        alert('请先输入 GitHub Token');
+        updateSyncStatus('error', '缺少Token配置');
         return;
       }
       
@@ -849,23 +914,20 @@
         
         const data = await response.json();
         syncConfig.gistId = data.id;
-        document.getElementById('gistId').value = data.id;
         saveSyncConfigToStorage();
-        updateConfigStatus();
         
-        updateSyncStatus('ready', 'Gist 创建成功');
-        alert(`Gist 创建成功！\nID: ${data.id}\n\n其他人使用此ID和他们的Token即可同步数据。`);
+        updateSyncStatus('ready', '同步已创建');
+        console.log('✅ Gist 创建成功，ID:', data.id);
       } catch (error) {
         console.error('创建Gist失败:', error);
         updateSyncStatus('error', '创建失败: ' + error.message);
-        alert('创建Gist失败: ' + error.message + '\n\n请确保Token具有 gist 权限。');
       }
     }
 
     async function syncFromGist(silent = false) {
       if (!syncConfig.token || !syncConfig.gistId) {
         if (!silent) {
-          alert('请先配置 GitHub Token 和 Gist ID');
+          console.log('同步配置不完整');
         }
         return;
       }
@@ -912,9 +974,6 @@
       } catch (error) {
         console.error('同步失败:', error);
         updateSyncStatus('error', '同步失败');
-        if (!silent) {
-          alert('同步失败: ' + error.message + '\n\n请检查Token和Gist ID是否正确。');
-        }
       } finally {
         isSyncing = false;
       }
@@ -962,23 +1021,17 @@
       }
     }
 
-    function syncNow() {
-      if (!syncConfig.token || !syncConfig.gistId) {
-        alert('请先配置 GitHub Token 和 Gist ID');
-        return;
-      }
-      syncFromGist(false);
-    }
-
     function startAutoSync() {
       if (syncTimer) clearInterval(syncTimer);
       
+      // 每30秒自动从Gist拉取更新
       syncTimer = setInterval(() => {
         if (syncConfig.token && syncConfig.gistId && !isSyncing) {
           syncFromGist(true);
         }
       }, 30000);
       
+      // 本地数据变化后延迟上传（防抖）
       let uploadTimeout;
       const originalSaveLocalData = saveLocalData;
       saveLocalData = function() {
@@ -1003,9 +1056,6 @@
       textEl.textContent = text;
     }
 
-    // ==================== 启动应用 ====================
-    init();
-    
     // 注册Service Worker实现PWA离线缓存
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', () => {
