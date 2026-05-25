@@ -1,0 +1,16 @@
+{
+    "name": "随机选择器",
+    "short_name": "随机选",
+    "description": "分类随机选择小工具",
+    "start_url": ".",
+    "display": "standalone",
+    "background_color": "#667eea",
+    "theme_color": "#667eea",
+    "icons": [
+        {
+            "src": "icon.png",
+            "sizes": "512x512",
+            "type": "image/png"
+        }
+    ]
+}
