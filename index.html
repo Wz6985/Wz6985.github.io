@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>菜单</title>
+    <title>随机选择器</title>
     
     <link rel="manifest" href="manifest.json">
     <meta name="apple-mobile-web-app-capable" content="yes">
@@ -74,7 +74,7 @@
 
         .add-cat-btn:hover { border-color: #667eea; color: #667eea; background: #f8f9ff; }
 
-        .options-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 20px; }
+        .options-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 10px; }
 
         .option-item {
             background: #f8f9ff; border: 2px solid #e8e8ff; border-radius: 12px;
@@ -105,6 +105,46 @@
             100% { transform: scale(1.06); }
         }
 
+        .pagination {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            margin-bottom: 15px;
+        }
+
+        .page-btn {
+            width: 32px;
+            height: 32px;
+            border-radius: 8px;
+            border: 1px solid #e0e0e0;
+            background: white;
+            font-size: 13px;
+            font-weight: 600;
+            color: #666;
+            cursor: pointer;
+            transition: all 0.2s;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        .page-btn.active {
+            background: #667eea;
+            color: white;
+            border-color: #667eea;
+        }
+
+        .page-btn:disabled {
+            opacity: 0.4;
+            cursor: default;
+        }
+
+        .page-info {
+            font-size: 12px;
+            color: #999;
+            min-width: 50px;
+            text-align: center;
+        }
+
         .result-area { text-align: center; margin-bottom: 18px; min-height: 55px; display: flex; align-items: center; justify-content: center; }
 
         .result-text {
@@ -119,7 +159,6 @@
 
         .result-desc { display: block; font-size: 13px; font-weight: 400; margin-top: 4px; opacity: 0.8; }
 
-        /* 数量选择器 */
         .count-selector {
             display: flex;
             align-items: center;
@@ -128,31 +167,17 @@
             justify-content: center;
         }
 
-        .count-label {
-            font-size: 14px;
-            color: #888;
-            font-weight: 500;
-        }
+        .count-label { font-size: 14px; color: #888; font-weight: 500; }
 
         .count-btn {
-            width: 38px;
-            height: 38px;
-            border-radius: 10px;
-            border: 2px solid #e0e0e0;
-            background: white;
-            font-size: 15px;
-            font-weight: 600;
-            color: #666;
-            cursor: pointer;
-            transition: all 0.2s;
+            width: 38px; height: 38px; border-radius: 10px;
+            border: 2px solid #e0e0e0; background: white;
+            font-size: 15px; font-weight: 600; color: #666;
+            cursor: pointer; transition: all 0.2s;
             -webkit-tap-highlight-color: transparent;
         }
 
-        .count-btn.active {
-            background: #667eea;
-            color: white;
-            border-color: #667eea;
-        }
+        .count-btn.active { background: #667eea; color: white; border-color: #667eea; }
 
         .random-btn {
             width: 100%; padding: 16px; border: none; border-radius: 16px;
@@ -166,7 +191,7 @@
 
         .tip { text-align: center; color: #aaa; font-size: 12px; margin-top: 12px; line-height: 1.6; }
 
-        .sync-status { text-align: center; font-size: 11px; color: #bbb; margin-top: 4px; min-height: 18px; }
+        .sync-status { text-align: center; font-size: 11px; color: #bbb; margin-top: 4px; min-height: 18px; line-height: 1.5; }
 
         .reset-btn {
             display: block; margin: 10px auto 0; padding: 8px 16px;
@@ -184,8 +209,8 @@
 
         .modal-box {
             background: white; border-radius: 20px; padding: 25px 20px; width: 85%;
-            max-width: 350px; text-align: center; box-shadow: 0 20px 60px rgba(0,0,0,0.3);
-            animation: pop 0.3s ease;
+            max-width: 360px; text-align: center; box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            animation: pop 0.3s ease; max-height: 80vh; overflow-y: auto;
         }
 
         .modal-box h3 { margin-bottom: 8px; color: #333; font-size: 18px; }
@@ -234,7 +259,7 @@
 </head>
 <body>
     <div class="container">
-        <h1>🎲 兔宝御用菜单</h1>
+        <h1>🎲 共享随机选择器</h1>
 
         <div class="categories-wrapper">
             <div class="categories" id="categoryBtns"></div>
@@ -242,11 +267,12 @@
         </div>
 
         <div class="options-grid" id="optionsGrid"></div>
+        <div class="pagination" id="pagination"></div>
+
         <div class="result-area">
             <span class="result-text" id="resultText">点击选项查看介绍 | 双击编辑</span>
         </div>
 
-        <!-- 数量选择器 -->
         <div class="count-selector">
             <span class="count-label">随机数量：</span>
             <button class="count-btn active" id="count1" onclick="setCount(1)">1</button>
@@ -257,20 +283,22 @@
         </div>
 
         <button class="random-btn" onclick="randomPick()">✨ 随 机 选 择</button>
-        <p class="tip">👆 点击选项查看介绍 | 再次点击编辑<br>💡 右侧 + 添加新分类 | 修改自动同步</p>
+        <p class="tip">👆 点击选项查看详情 | 再次点击编辑<br>💡 每页12个选项 | 修改自动同步</p>
         <p class="sync-status" id="syncStatus"></p>
         <button class="reset-btn" onclick="if(confirm('确定要重置所有数据吗？此操作不可恢复。')){localStorage.clear();location.reload();}">⚠️ 重置本地数据</button>
     </div>
 
-    <!-- 编辑选项弹窗 -->
+    <!-- 编辑弹窗 -->
     <div class="modal-overlay" id="modalOverlay">
         <div class="modal-box">
             <h3 id="modalTitle">选项详情</h3>
             <p class="subtitle" id="modalSubtitle"></p>
             <label>名称</label>
             <input type="text" id="modalName" placeholder="选项名称">
-            <label>介绍</label>
-            <textarea id="modalDesc" placeholder="添加一段介绍..."></textarea>
+            <label>🥬 需要准备的食材</label>
+            <textarea id="modalIngredients" placeholder="例如：面粉、猪肉、葱姜..."></textarea>
+            <label>🍳 做法</label>
+            <textarea id="modalSteps" placeholder="例如：1.和面 2.调馅 3.包制..."></textarea>
             <div class="modal-buttons">
                 <button class="btn-cancel" onclick="closeModal()">取消</button>
                 <button class="btn-confirm" onclick="confirmEdit()">保存</button>
@@ -317,6 +345,7 @@
 
     <script>
         const FILE_PATH = 'shared-data.json';
+        const PAGE_SIZE = 12;
 
         let GITHUB_USERNAME = '';
         let REPO_NAME = '';
@@ -325,6 +354,7 @@
 
         let data = {};
         let currentCategory = '';
+        let currentPage = 1;
         let editingIndex = -1;
         let fileSHA = '';
         let syncEnabled = false;
@@ -335,14 +365,15 @@
             if (!el) return;
             el.textContent = msg;
             el.style.color = isError ? '#e05555' : '#4caf50';
-            if (!isError) setTimeout(function() { el.textContent = ''; }, 3000);
+            // 成功提示 3 秒后消失，错误提示一直显示
+            if (!isError) {
+                setTimeout(function() { el.textContent = ''; }, 3000);
+            }
         }
 
         function setCount(n) {
             pickCount = n;
-            document.querySelectorAll('.count-btn').forEach(function(btn) {
-                btn.classList.remove('active');
-            });
+            document.querySelectorAll('.count-btn').forEach(function(btn) { btn.classList.remove('active'); });
             document.getElementById('count' + n).classList.add('active');
         }
 
@@ -350,7 +381,6 @@
             GITHUB_USERNAME = localStorage.getItem('gh_username') || '';
             REPO_NAME = localStorage.getItem('gh_repo') || '';
             GITHUB_TOKEN = localStorage.getItem('gh_token') || '';
-            
             if (GITHUB_USERNAME && REPO_NAME && GITHUB_TOKEN) {
                 API_URL = 'https://api.github.com/repos/' + GITHUB_USERNAME + '/' + REPO_NAME + '/contents/' + FILE_PATH;
                 syncEnabled = true;
@@ -360,29 +390,18 @@
         }
 
         async function loadFromCloud() {
-            if (!syncEnabled) {
-                loadLocalFallback();
-                return;
-            }
-            
+            if (!syncEnabled) { loadLocalFallback(); return; }
             setStatus('🔄 加载中...');
             try {
-                const response = await fetch(API_URL, {
-                    headers: { 'Authorization': 'token ' + GITHUB_TOKEN }
-                });
+                const response = await fetch(API_URL, { headers: { 'Authorization': 'token ' + GITHUB_TOKEN } });
                 if (!response.ok) throw new Error('加载失败');
                 const json = await response.json();
                 fileSHA = json.sha;
-                
-                // UTF-8 解码
                 const binaryStr = atob(json.content);
                 const bytes = new Uint8Array(binaryStr.length);
-                for (let i = 0; i < binaryStr.length; i++) {
-                    bytes[i] = binaryStr.charCodeAt(i);
-                }
+                for (let i = 0; i < binaryStr.length; i++) { bytes[i] = binaryStr.charCodeAt(i); }
                 const decoder = new TextDecoder();
                 const content = JSON.parse(decoder.decode(bytes));
-                
                 data = content;
                 setStatus('✅ 已同步最新数据');
                 localStorage.setItem('sharedPickerBackup', JSON.stringify(data));
@@ -391,75 +410,81 @@
                 setStatus('⚠️ 加载云端失败，使用本地缓存', true);
                 loadLocalFallback();
             }
-            
             initApp();
         }
 
         function loadLocalFallback() {
             const local = localStorage.getItem('sharedPickerBackup');
-            if (local) {
-                try { data = JSON.parse(local); } catch(e) {}
-            }
+            if (local) { try { data = JSON.parse(local); } catch(e) {} }
             if (!data || Object.keys(data).length === 0) {
                 data = {
-                    '早餐': [{ name: '包子', desc: '热腾腾的鲜肉包' }, { name: '油条', desc: '酥脆金黄' }, { name: '豆浆', desc: '现磨香浓' }],
-                    '午餐': [{ name: '黄焖鸡', desc: '下饭神器' }, { name: '麻辣烫', desc: '随心搭配' }, { name: '盖浇饭', desc: '锅气十足' }],
-                    '晚餐': [{ name: '沙拉', desc: '低卡健康' }, { name: '火锅', desc: '热闹过瘾' }, { name: '烧烤', desc: '滋滋冒油' }]
+                    '早餐': [
+                        { name: '包子', ingredients: '面粉、猪肉、酵母、葱姜', steps: '1.和面发酵 2.调馅 3.包制 4.上锅蒸15分钟' },
+                        { name: '油条', ingredients: '面粉、鸡蛋、泡打粉、油', steps: '1.和面醒发 2.擀成长条 3.两根叠压 4.下锅炸至金黄' },
+                        { name: '豆浆', ingredients: '黄豆、水、糖', steps: '1.黄豆提前泡8小时 2.加水电磨 3.过滤煮沸 4.加糖调味' }
+                    ],
+                    '午餐': [
+                        { name: '黄焖鸡', ingredients: '鸡腿、香菇、土豆、青椒', steps: '1.鸡腿切块腌制 2.香菇泡发 3.大火爆炒 4.加酱料焖煮20分钟' },
+                        { name: '麻辣烫', ingredients: '自选食材、火锅底料、牛奶', steps: '1.熬底料汤底 2.依次下食材 3.加牛奶增香 4.捞出入碗' },
+                        { name: '盖浇饭', ingredients: '米饭、猪肉、青椒、洋葱', steps: '1.猪肉切片腌制 2.爆炒肉片 3.加入蔬菜 4.浇在米饭上' }
+                    ],
+                    '晚餐': [
+                        { name: '沙拉', ingredients: '生菜、番茄、黄瓜、鸡胸肉', steps: '1.蔬菜洗净切块 2.鸡胸肉煮熟撕丝 3.混合拌匀 4.淋上油醋汁' },
+                        { name: '火锅', ingredients: '火锅底料、肉类、蔬菜、蘸料', steps: '1.熬制汤底 2.准备各类食材 3.调好蘸料 4.边涮边吃' },
+                        { name: '烧烤', ingredients: '五花肉、羊肉串、调料粉、炭火', steps: '1.肉切块腌制2小时 2.串成串 3.炭火烤制 4.撒调料翻面' }
+                    ]
                 };
             }
         }
 
         async function saveToCloud() {
             localStorage.setItem('sharedPickerBackup', JSON.stringify(data));
-            
-            if (!syncEnabled) {
-                setStatus('💾 已保存到本地（未配置同步）');
-                return;
-            }
-            
+            if (!syncEnabled) { setStatus('💾 已保存到本地（未配置同步）'); return; }
             setStatus('⏳ 同步中...');
             try {
-                // UTF-8 编码
                 const jsonStr = JSON.stringify(data, null, 2);
                 const encoder = new TextEncoder();
                 const bytes = encoder.encode(jsonStr);
                 let binary = '';
-                for (let i = 0; i < bytes.length; i++) {
-                    binary += String.fromCharCode(bytes[i]);
-                }
+                for (let i = 0; i < bytes.length; i++) { binary += String.fromCharCode(bytes[i]); }
                 const content = btoa(binary);
-                
                 const body = { message: '更新数据', content: content, sha: fileSHA };
-                
                 const response = await fetch(API_URL, {
                     method: 'PUT',
-                    headers: {
-                        'Authorization': 'token ' + GITHUB_TOKEN,
-                        'Content-Type': 'application/json'
-                    },
+                    headers: { 'Authorization': 'token ' + GITHUB_TOKEN, 'Content-Type': 'application/json' },
                     body: JSON.stringify(body)
                 });
-                
                 if (!response.ok) throw new Error('上传失败');
                 const json = await response.json();
                 fileSHA = json.content.sha;
-                setStatus('✅ 已同步到云端，家人刷新可见');
+                setStatus('✅ 已上传云端');
             } catch (err) {
                 console.error(err);
-                setStatus('⚠️ 同步失败，数据已存本地', true);
+                setStatus('⚠️ 上传云端失败，稍后再试，已保存本地（建议删除本地选项再重新上传）', true);
             }
         }
 
         function initApp() {
             const cats = Object.keys(data);
-            if (cats.length === 0) {
-                data['默认'] = [{ name: '示例选项', desc: '点击编辑我' }];
-            }
-            if (!data[currentCategory]) {
-                currentCategory = Object.keys(data)[0];
-            }
+            if (cats.length === 0) { data['默认'] = [{ name: '示例选项', ingredients: '', steps: '' }]; }
+            if (!data[currentCategory]) { currentCategory = Object.keys(data)[0]; }
+            currentPage = 1;
             renderCategories();
             renderOptions();
+            renderPagination();
+        }
+
+        function getCurrentPageOptions() {
+            if (!data[currentCategory]) return [];
+            const total = data[currentCategory].length;
+            const start = (currentPage - 1) * PAGE_SIZE;
+            const end = Math.min(start + PAGE_SIZE, total);
+            return data[currentCategory].slice(start, end);
+        }
+
+        function getTotalPages() {
+            if (!data[currentCategory]) return 1;
+            return Math.ceil(data[currentCategory].length / PAGE_SIZE) || 1;
         }
 
         function renderCategories() {
@@ -470,21 +495,15 @@
                 const btn = document.createElement('button');
                 btn.className = 'category-btn';
                 if (cat === currentCategory) btn.classList.add('active');
-                
                 const label = document.createElement('span');
                 label.textContent = cat;
                 btn.appendChild(label);
-                
                 const delBtn = document.createElement('span');
                 delBtn.className = 'delete-cat';
                 delBtn.textContent = '×';
                 delBtn.title = '删除分类';
-                delBtn.onclick = function(e) {
-                    e.stopPropagation();
-                    deleteCategory(cat);
-                };
+                delBtn.onclick = function(e) { e.stopPropagation(); deleteCategory(cat); };
                 btn.appendChild(delBtn);
-                
                 btn.onclick = function() { switchCategory(cat); };
                 container.appendChild(btn);
             });
@@ -494,38 +513,32 @@
             const grid = document.getElementById('optionsGrid');
             if (!grid) return;
             grid.innerHTML = '';
-            if (!data[currentCategory]) return;
-            
-            data[currentCategory].forEach(function(item, index) {
+            const pageItems = getCurrentPageOptions();
+            const startIndex = (currentPage - 1) * PAGE_SIZE;
+
+            pageItems.forEach(function(item, i) {
                 const div = document.createElement('div');
                 div.className = 'option-item';
-                const descPreview = item.desc ? item.desc.substring(0, 6) + (item.desc.length > 6 ? '…' : '') : '';
-                div.innerHTML = item.name + (descPreview ? '<span class="item-desc-preview">' + descPreview + '</span>' : '');
-                
-                // 点击查看介绍，再次点击编辑
+                const realIndex = startIndex + i;
+                const preview = item.ingredients ? item.ingredients.substring(0, 6) + (item.ingredients.length > 6 ? '…' : '') : '';
+                div.innerHTML = item.name + (preview ? '<span class="item-desc-preview">' + preview + '</span>' : '');
                 div.onclick = function() {
-                    // 先高亮当前选项
                     document.querySelectorAll('.option-item').forEach(function(el) { el.classList.remove('highlight'); });
                     this.classList.add('highlight');
-                    
-                    // 显示介绍
-                    const item = data[currentCategory][index];
                     const result = document.getElementById('resultText');
                     if (result) {
                         let html = '📋 ' + item.name;
-                        if (item.desc) html += '<span class="result-desc">' + item.desc + '</span>';
+                        if (item.ingredients) html += '<span class="result-desc">🥬 食材：' + item.ingredients + '</span>';
+                        if (item.steps) html += '<span class="result-desc">🍳 做法：' + item.steps + '</span>';
                         html += '<span class="result-desc" style="color:#667eea;margin-top:6px;">👆 再次点击可编辑</span>';
                         result.innerHTML = html;
                         result.classList.add('show');
                     }
-                    
-                    // 800毫秒内再次点击同一个，打开编辑
                     if (this._lastClick && Date.now() - this._lastClick < 800) {
-                        openEditModal(index);
+                        openEditModal(realIndex);
                     }
                     this._lastClick = Date.now();
                 };
-                
                 grid.appendChild(div);
             });
 
@@ -536,10 +549,34 @@
             grid.appendChild(addDiv);
         }
 
+        function renderPagination() {
+            const container = document.getElementById('pagination');
+            if (!container) return;
+            const total = getTotalPages();
+            if (total <= 1) { container.innerHTML = ''; return; }
+
+            let html = '';
+            html += '<button class="page-btn" ' + (currentPage === 1 ? 'disabled' : '') + ' onclick="goToPage(' + (currentPage - 1) + ')">◀</button>';
+            html += '<span class="page-info">' + currentPage + ' / ' + total + '</span>';
+            html += '<button class="page-btn" ' + (currentPage === total ? 'disabled' : '') + ' onclick="goToPage(' + (currentPage + 1) + ')">▶</button>';
+            container.innerHTML = html;
+        }
+
+        function goToPage(page) {
+            const total = getTotalPages();
+            if (page < 1 || page > total) return;
+            currentPage = page;
+            renderOptions();
+            renderPagination();
+            clearResult();
+        }
+
         function switchCategory(cat) {
             currentCategory = cat;
+            currentPage = 1;
             renderCategories();
             renderOptions();
+            renderPagination();
             clearResult();
         }
 
@@ -549,37 +586,32 @@
             setTimeout(function() { document.getElementById('catNameInput').focus(); }, 200);
         }
 
-        function closeCatModal() {
-            document.getElementById('catModal').classList.remove('show');
-        }
+        function closeCatModal() { document.getElementById('catModal').classList.remove('show'); }
 
         async function confirmAddCategory() {
             const name = document.getElementById('catNameInput').value.trim();
             if (!name) { alert('分类名称不能为空'); return; }
             if (data[name]) { alert('该分类已存在'); return; }
-            
             data[name] = [];
             currentCategory = name;
+            currentPage = 1;
             renderCategories();
             renderOptions();
+            renderPagination();
             closeCatModal();
             await saveToCloud();
         }
 
         async function deleteCategory(cat) {
             const cats = Object.keys(data);
-            if (cats.length <= 1) {
-                alert('至少保留一个分类');
-                return;
-            }
+            if (cats.length <= 1) { alert('至少保留一个分类'); return; }
             if (!confirm('确定要删除「' + cat + '」分类及其所有选项吗？此操作不可恢复。')) return;
-            
             delete data[cat];
-            if (currentCategory === cat) {
-                currentCategory = Object.keys(data)[0];
-            }
+            if (currentCategory === cat) { currentCategory = Object.keys(data)[0]; }
+            currentPage = 1;
             renderCategories();
             renderOptions();
+            renderPagination();
             clearResult();
             await saveToCloud();
         }
@@ -587,61 +619,47 @@
         function clearResult() {
             document.querySelectorAll('.option-item').forEach(function(el) { el.classList.remove('highlight'); });
             const result = document.getElementById('resultText');
-            if (result) {
-                result.innerHTML = '点击选项查看介绍 | 双击编辑';
-                result.classList.remove('show');
-            }
+            if (result) { result.innerHTML = '点击选项查看介绍 | 双击编辑'; result.classList.remove('show'); }
         }
 
         function randomPick() {
-            if (!data[currentCategory] || data[currentCategory].length === 0) {
-                alert('当前分类还没有选项，请先添加');
-                return;
-            }
-            const options = data[currentCategory];
-            const total = options.length;
-            
-            // 如果选项不够，调整数量
+            const allOptions = data[currentCategory] || [];
+            if (allOptions.length === 0) { alert('当前分类还没有选项，请先添加'); return; }
+            const total = allOptions.length;
             let count = Math.min(pickCount, total);
-            
-            // 随机抽取 count 个不重复的选项
-            const shuffled = options.slice();
+            const shuffled = allOptions.slice();
             for (let i = shuffled.length - 1; i > 0; i--) {
                 const j = Math.floor(Math.random() * (i + 1));
                 [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
             }
             const picked = shuffled.slice(0, count);
-            
-            // 清除高亮
+
             document.querySelectorAll('.option-item').forEach(function(el) { el.classList.remove('highlight'); });
-            
-            // 高亮选中的选项
-            const items = document.querySelectorAll('.option-item');
+
+            const pageItems = getCurrentPageOptions();
             picked.forEach(function(p) {
-                const idx = options.indexOf(p);
-                if (idx >= 0 && items[idx]) {
-                    items[idx].classList.add('highlight');
+                const idxInPage = pageItems.indexOf(p);
+                if (idxInPage >= 0) {
+                    const items = document.querySelectorAll('.option-item');
+                    if (items[idxInPage]) items[idxInPage].classList.add('highlight');
                 }
             });
-            
-            // 显示结果
+
             const result = document.getElementById('resultText');
             if (result) {
                 let html = '🎉 ' + currentCategory + '：';
                 picked.forEach(function(p, i) {
                     html += p.name;
-                    if (p.desc) html += '<span class="result-desc">' + p.desc + '</span>';
+                    if (p.ingredients) html += '<span class="result-desc">🥬 ' + p.ingredients + '</span>';
+                    if (p.steps) html += '<span class="result-desc">🍳 ' + p.steps + '</span>';
                     if (i < picked.length - 1) html += '、';
                 });
                 result.innerHTML = html;
                 result.classList.add('show');
             }
-            
+
             const btn = document.querySelector('.random-btn');
-            if (btn) {
-                btn.style.transform = 'scale(0.94)';
-                setTimeout(function() { btn.style.transform = ''; }, 150);
-            }
+            if (btn) { btn.style.transform = 'scale(0.94)'; setTimeout(function() { btn.style.transform = ''; }, 150); }
         }
 
         function openEditModal(index) {
@@ -650,7 +668,8 @@
             document.getElementById('modalTitle').textContent = '编辑选项';
             document.getElementById('modalSubtitle').textContent = '分类：' + currentCategory;
             document.getElementById('modalName').value = item.name;
-            document.getElementById('modalDesc').value = item.desc || '';
+            document.getElementById('modalIngredients').value = item.ingredients || '';
+            document.getElementById('modalSteps').value = item.steps || '';
             document.getElementById('btnDelete').style.display = 'block';
             document.getElementById('modalOverlay').classList.add('show');
             setTimeout(function() { document.getElementById('modalName').focus(); }, 200);
@@ -661,31 +680,33 @@
             document.getElementById('modalTitle').textContent = '添加选项';
             document.getElementById('modalSubtitle').textContent = '分类：' + currentCategory;
             document.getElementById('modalName').value = '';
-            document.getElementById('modalDesc').value = '';
+            document.getElementById('modalIngredients').value = '';
+            document.getElementById('modalSteps').value = '';
             document.getElementById('btnDelete').style.display = 'none';
             document.getElementById('modalOverlay').classList.add('show');
             setTimeout(function() { document.getElementById('modalName').focus(); }, 200);
         }
 
-        function closeModal() {
-            document.getElementById('modalOverlay').classList.remove('show');
-            editingIndex = -1;
-        }
+        function closeModal() { document.getElementById('modalOverlay').classList.remove('show'); editingIndex = -1; }
 
         async function confirmEdit() {
             const name = document.getElementById('modalName').value.trim();
-            const desc = document.getElementById('modalDesc').value.trim();
+            const ingredients = document.getElementById('modalIngredients').value.trim();
+            const steps = document.getElementById('modalSteps').value.trim();
             if (!name) { alert('名称不能为空'); return; }
 
-            const newItem = { name: name, desc: desc };
+            const newItem = { name: name, ingredients: ingredients, steps: steps };
 
             if (editingIndex >= 0) {
                 data[currentCategory][editingIndex] = newItem;
             } else {
                 data[currentCategory].push(newItem);
+                const totalPages = getTotalPages();
+                currentPage = totalPages;
             }
 
             renderOptions();
+            renderPagination();
             clearResult();
             closeModal();
             await saveToCloud();
@@ -695,7 +716,10 @@
             if (editingIndex < 0) return;
             if (!confirm('确定要删除「' + data[currentCategory][editingIndex].name + '」吗？')) return;
             data[currentCategory].splice(editingIndex, 1);
+            const totalPages = getTotalPages();
+            if (currentPage > totalPages) currentPage = totalPages;
             renderOptions();
+            renderPagination();
             clearResult();
             closeModal();
             await saveToCloud();
@@ -705,13 +729,10 @@
             const username = document.getElementById('tokenUsername').value.trim();
             const repo = document.getElementById('tokenRepo').value.trim();
             const token = document.getElementById('tokenInput').value.trim();
-            
             if (!username || !repo || !token) { alert('请填写所有字段'); return; }
-            
             localStorage.setItem('gh_username', username);
             localStorage.setItem('gh_repo', repo);
             localStorage.setItem('gh_token', token);
-            
             document.getElementById('tokenModal').classList.remove('show');
             loadTokenConfig();
             loadFromCloud();
@@ -725,14 +746,10 @@
             setStatus('💾 仅本地使用，不会同步');
         }
 
-        document.getElementById('modalOverlay').addEventListener('click', function(e) {
-            if (e.target === this) closeModal();
-        });
-        document.getElementById('catModal').addEventListener('click', function(e) {
-            if (e.target === this) closeCatModal();
-        });
+        document.getElementById('modalOverlay').addEventListener('click', function(e) { if (e.target === this) closeModal(); });
+        document.getElementById('catModal').addEventListener('click', function(e) { if (e.target === this) closeCatModal(); });
 
-        document.getElementById('modalDesc').addEventListener('keydown', function(e) {
+        document.getElementById('modalSteps').addEventListener('keydown', function(e) {
             if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) confirmEdit();
         });
         document.getElementById('catNameInput').addEventListener('keydown', function(e) {
