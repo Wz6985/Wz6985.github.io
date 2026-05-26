@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>菜单</title>
+    <title>随机选择器</title>
     
     <link rel="manifest" href="manifest.json">
     <meta name="apple-mobile-web-app-capable" content="yes">
@@ -36,6 +36,19 @@
         }
 
         h1 { text-align: center; color: #333; margin-bottom: 20px; font-size: 24px; }
+
+        /* 搜索框 */
+        .search-box {
+            width: 100%;
+            padding: 10px 14px;
+            border: 2px solid #e0e0e0;
+            border-radius: 12px;
+            font-size: 14px;
+            outline: none;
+            margin-bottom: 15px;
+            transition: border 0.3s;
+        }
+        .search-box:focus { border-color: #667eea; }
 
         .categories-wrapper { display: flex; align-items: flex-start; gap: 8px; margin-bottom: 20px; }
 
@@ -99,6 +112,11 @@
 
         .option-item.highlight .item-desc-preview { color: rgba(255,255,255,0.7); }
 
+        .option-item.duplicate-warning {
+            border-color: #ff9800 !important;
+            background: #fff8e1 !important;
+        }
+
         @keyframes pop {
             0% { transform: scale(1); }
             50% { transform: scale(1.12); }
@@ -114,36 +132,17 @@
         }
 
         .page-btn {
-            width: 32px;
-            height: 32px;
-            border-radius: 8px;
-            border: 1px solid #e0e0e0;
-            background: white;
-            font-size: 13px;
-            font-weight: 600;
-            color: #666;
-            cursor: pointer;
-            transition: all 0.2s;
+            width: 32px; height: 32px; border-radius: 8px;
+            border: 1px solid #e0e0e0; background: white;
+            font-size: 13px; font-weight: 600; color: #666;
+            cursor: pointer; transition: all 0.2s;
             -webkit-tap-highlight-color: transparent;
         }
 
-        .page-btn.active {
-            background: #667eea;
-            color: white;
-            border-color: #667eea;
-        }
+        .page-btn.active { background: #667eea; color: white; border-color: #667eea; }
+        .page-btn:disabled { opacity: 0.4; cursor: default; }
 
-        .page-btn:disabled {
-            opacity: 0.4;
-            cursor: default;
-        }
-
-        .page-info {
-            font-size: 12px;
-            color: #999;
-            min-width: 50px;
-            text-align: center;
-        }
+        .page-info { font-size: 12px; color: #999; min-width: 50px; text-align: center; }
 
         .result-area { text-align: center; margin-bottom: 18px; min-height: 55px; display: flex; align-items: center; justify-content: center; }
 
@@ -160,11 +159,8 @@
         .result-desc { display: block; font-size: 13px; font-weight: 400; margin-top: 4px; opacity: 0.8; }
 
         .count-selector {
-            display: flex;
-            align-items: center;
-            gap: 6px;
-            margin-bottom: 15px;
-            justify-content: center;
+            display: flex; align-items: center; gap: 6px;
+            margin-bottom: 15px; justify-content: center;
         }
 
         .count-label { font-size: 14px; color: #888; font-weight: 500; }
@@ -189,6 +185,20 @@
 
         .random-btn:active { transform: scale(0.96); }
 
+        .action-row {
+            display: flex; gap: 8px; margin-top: 12px; flex-wrap: wrap; justify-content: center;
+        }
+
+        .action-btn {
+            padding: 8px 14px; border-radius: 10px; border: 1px solid #e0e0e0;
+            background: white; font-size: 12px; color: #888; cursor: pointer;
+            transition: all 0.2s; -webkit-tap-highlight-color: transparent;
+        }
+
+        .action-btn:hover { border-color: #667eea; color: #667eea; }
+        .action-btn.danger { color: #e05555; border-color: #ffe0e0; }
+        .action-btn.danger:hover { background: #fff0f0; }
+
         .tip { text-align: center; color: #aaa; font-size: 12px; margin-top: 12px; line-height: 1.6; }
 
         .sync-status { text-align: center; font-size: 11px; color: #bbb; margin-top: 4px; min-height: 18px; line-height: 1.5; }
@@ -209,7 +219,7 @@
 
         .modal-box {
             background: white; border-radius: 20px; padding: 25px 20px; width: 85%;
-            max-width: 360px; text-align: center; box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            max-width: 380px; text-align: center; box-shadow: 0 20px 60px rgba(0,0,0,0.3);
             animation: pop 0.3s ease; max-height: 80vh; overflow-y: auto;
         }
 
@@ -255,11 +265,16 @@
         #tokenModal .modal-box { max-width: 380px; }
         #tokenModal .help-text { font-size: 12px; color: #999; text-align: left; margin-bottom: 10px; line-height: 1.5; }
         #tokenModal .help-text a { color: #667eea; }
+
+        #batchModal textarea { min-height: 150px; font-size: 12px; font-family: monospace; }
     </style>
 </head>
 <body>
     <div class="container">
-        <h1>🎲 兔宝御用菜单</h1>
+        <h1>🎲 共享随机选择器</h1>
+
+        <!-- 搜索框 -->
+        <input type="text" class="search-box" id="searchInput" placeholder="🔍 搜索选项..." oninput="onSearch()">
 
         <div class="categories-wrapper">
             <div class="categories" id="categoryBtns"></div>
@@ -283,6 +298,15 @@
         </div>
 
         <button class="random-btn" onclick="randomPick()">✨ 随 机 选 择</button>
+
+        <!-- 操作按钮行 -->
+        <div class="action-row">
+            <button class="action-btn" onclick="retrySync()" title="手动重试同步">🔄 重试同步</button>
+            <button class="action-btn" onclick="exportData()" title="导出数据为文件">📥 导出备份</button>
+            <button class="action-btn" onclick="openBatchImport()" title="批量导入JSON">📤 批量导入</button>
+            <button class="action-btn danger" onclick="clearCurrentCategory()" title="清空当前分类所有选项">🗑 清空分类</button>
+        </div>
+
         <p class="tip">👆 点击选项查看详情 | 再次点击编辑<br>💡 每页12个选项 | 修改自动同步</p>
         <p class="sync-status" id="syncStatus"></p>
         <button class="reset-btn" onclick="if(confirm('确定要重置所有数据吗？此操作不可恢复。')){localStorage.clear();location.reload();}">⚠️ 重置本地数据</button>
@@ -311,12 +335,27 @@
     <div class="modal-overlay" id="catModal">
         <div class="modal-box">
             <h3>添加新分类</h3>
-            <p class="subtitle">输入分类名称（如：夜宵、零食）</p>
+            <p class="subtitle">输入分类名称</p>
             <label>分类名称</label>
             <input type="text" id="catNameInput" placeholder="例如：夜宵">
             <div class="modal-buttons">
                 <button class="btn-cancel" onclick="closeCatModal()">取消</button>
                 <button class="btn-confirm" onclick="confirmAddCategory()">添加</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 批量导入弹窗 -->
+    <div class="modal-overlay" id="batchModal">
+        <div class="modal-box" style="max-width:400px;">
+            <h3>批量导入选项</h3>
+            <p class="subtitle">粘贴 JSON 格式数据，导入到当前分类</p>
+            <label>JSON 数据</label>
+            <textarea id="batchInput" placeholder='[{"name":"菜名","ingredients":"食材","steps":"做法"},...]'></textarea>
+            <p style="font-size:11px;color:#999;text-align:left;margin-top:4px;">格式示例：[{"name":"红烧肉","ingredients":"五花肉、冰糖","steps":"1.焯水 2.炒糖色..."}]</p>
+            <div class="modal-buttons">
+                <button class="btn-cancel" onclick="closeBatchModal()">取消</button>
+                <button class="btn-confirm" onclick="confirmBatchImport()">导入</button>
             </div>
         </div>
     </div>
@@ -359,13 +398,14 @@
         let fileSHA = '';
         let syncEnabled = false;
         let pickCount = 1;
+        let searchKeyword = '';
+        let filteredOptions = [];
 
         function setStatus(msg, isError) {
             const el = document.getElementById('syncStatus');
             if (!el) return;
             el.textContent = msg;
             el.style.color = isError ? '#e05555' : '#4caf50';
-            // 成功提示 3 秒后消失，错误提示一直显示
             if (!isError) {
                 setTimeout(function() { el.textContent = ''; }, 3000);
             }
@@ -394,6 +434,12 @@
             setStatus('🔄 加载中...');
             try {
                 const response = await fetch(API_URL, { headers: { 'Authorization': 'token ' + GITHUB_TOKEN } });
+                if (response.status === 401) {
+                    setStatus('⚠️ Token 可能已失效，请重新生成并填写', true);
+                    loadLocalFallback();
+                    initApp();
+                    return;
+                }
                 if (!response.ok) throw new Error('加载失败');
                 const json = await response.json();
                 fileSHA = json.sha;
@@ -464,27 +510,65 @@
             }
         }
 
+        async function retrySync() {
+            if (!syncEnabled) { alert('请先配置 Token 同步'); return; }
+            setStatus('⏳ 重试同步中...');
+            try {
+                const resp = await fetch(API_URL, { headers: { 'Authorization': 'token ' + GITHUB_TOKEN } });
+                if (resp.ok) {
+                    const j = await resp.json();
+                    fileSHA = j.sha;
+                }
+                await saveToCloud();
+            } catch (err) {
+                setStatus('⚠️ 重试失败，请稍后再试', true);
+            }
+        }
+
         function initApp() {
             const cats = Object.keys(data);
             if (cats.length === 0) { data['默认'] = [{ name: '示例选项', ingredients: '', steps: '' }]; }
             if (!data[currentCategory]) { currentCategory = Object.keys(data)[0]; }
             currentPage = 1;
+            searchKeyword = '';
+            document.getElementById('searchInput').value = '';
+            updateFilteredOptions();
             renderCategories();
             renderOptions();
             renderPagination();
         }
 
+        function updateFilteredOptions() {
+            const all = data[currentCategory] || [];
+            if (!searchKeyword) {
+                filteredOptions = all;
+            } else {
+                const kw = searchKeyword.toLowerCase();
+                filteredOptions = all.filter(function(item) {
+                    return item.name.toLowerCase().indexOf(kw) > -1 ||
+                           (item.ingredients && item.ingredients.toLowerCase().indexOf(kw) > -1) ||
+                           (item.steps && item.steps.toLowerCase().indexOf(kw) > -1);
+                });
+            }
+        }
+
+        function onSearch() {
+            searchKeyword = document.getElementById('searchInput').value.trim();
+            currentPage = 1;
+            updateFilteredOptions();
+            renderOptions();
+            renderPagination();
+        }
+
         function getCurrentPageOptions() {
-            if (!data[currentCategory]) return [];
-            const total = data[currentCategory].length;
+            const total = filteredOptions.length;
             const start = (currentPage - 1) * PAGE_SIZE;
             const end = Math.min(start + PAGE_SIZE, total);
-            return data[currentCategory].slice(start, end);
+            return filteredOptions.slice(start, end);
         }
 
         function getTotalPages() {
-            if (!data[currentCategory]) return 1;
-            return Math.ceil(data[currentCategory].length / PAGE_SIZE) || 1;
+            return Math.ceil(filteredOptions.length / PAGE_SIZE) || 1;
         }
 
         function renderCategories() {
@@ -514,14 +598,21 @@
             if (!grid) return;
             grid.innerHTML = '';
             const pageItems = getCurrentPageOptions();
-            const startIndex = (currentPage - 1) * PAGE_SIZE;
+            const allOptions = data[currentCategory] || [];
 
             pageItems.forEach(function(item, i) {
                 const div = document.createElement('div');
                 div.className = 'option-item';
-                const realIndex = startIndex + i;
                 const preview = item.ingredients ? item.ingredients.substring(0, 6) + (item.ingredients.length > 6 ? '…' : '') : '';
                 div.innerHTML = item.name + (preview ? '<span class="item-desc-preview">' + preview + '</span>' : '');
+                
+                // 重复检测：高亮同名选项
+                const sameNameCount = allOptions.filter(function(o) { return o.name === item.name; }).length;
+                if (sameNameCount > 1) {
+                    div.classList.add('duplicate-warning');
+                    div.title = '该选项名称重复';
+                }
+
                 div.onclick = function() {
                     document.querySelectorAll('.option-item').forEach(function(el) { el.classList.remove('highlight'); });
                     this.classList.add('highlight');
@@ -534,6 +625,8 @@
                         result.innerHTML = html;
                         result.classList.add('show');
                     }
+                    // 找到该选项在原始数组中的索引
+                    const realIndex = allOptions.indexOf(item);
                     if (this._lastClick && Date.now() - this._lastClick < 800) {
                         openEditModal(realIndex);
                     }
@@ -574,6 +667,9 @@
         function switchCategory(cat) {
             currentCategory = cat;
             currentPage = 1;
+            searchKeyword = '';
+            document.getElementById('searchInput').value = '';
+            updateFilteredOptions();
             renderCategories();
             renderOptions();
             renderPagination();
@@ -595,6 +691,9 @@
             data[name] = [];
             currentCategory = name;
             currentPage = 1;
+            searchKeyword = '';
+            document.getElementById('searchInput').value = '';
+            updateFilteredOptions();
             renderCategories();
             renderOptions();
             renderPagination();
@@ -609,7 +708,25 @@
             delete data[cat];
             if (currentCategory === cat) { currentCategory = Object.keys(data)[0]; }
             currentPage = 1;
+            searchKeyword = '';
+            document.getElementById('searchInput').value = '';
+            updateFilteredOptions();
             renderCategories();
+            renderOptions();
+            renderPagination();
+            clearResult();
+            await saveToCloud();
+        }
+
+        async function clearCurrentCategory() {
+            const count = (data[currentCategory] || []).length;
+            if (count === 0) { alert('当前分类已为空'); return; }
+            if (!confirm('确定要清空「' + currentCategory + '」分类下的全部 ' + count + ' 个选项吗？此操作不可恢复。')) return;
+            data[currentCategory] = [];
+            currentPage = 1;
+            searchKeyword = '';
+            document.getElementById('searchInput').value = '';
+            updateFilteredOptions();
             renderOptions();
             renderPagination();
             clearResult();
@@ -634,16 +751,31 @@
             }
             const picked = shuffled.slice(0, count);
 
-            document.querySelectorAll('.option-item').forEach(function(el) { el.classList.remove('highlight'); });
+            // 找到第一个选中项所在的页并跳转
+            const firstPicked = picked[0];
+            const idxInAll = allOptions.indexOf(firstPicked);
+            if (idxInAll >= 0) {
+                const targetPage = Math.floor(idxInAll / PAGE_SIZE) + 1;
+                currentPage = targetPage;
+                searchKeyword = '';
+                document.getElementById('searchInput').value = '';
+                updateFilteredOptions();
+                renderOptions();
+                renderPagination();
+            }
 
-            const pageItems = getCurrentPageOptions();
-            picked.forEach(function(p) {
-                const idxInPage = pageItems.indexOf(p);
-                if (idxInPage >= 0) {
-                    const items = document.querySelectorAll('.option-item');
-                    if (items[idxInPage]) items[idxInPage].classList.add('highlight');
-                }
-            });
+            // 高亮
+            setTimeout(function() {
+                document.querySelectorAll('.option-item').forEach(function(el) { el.classList.remove('highlight'); });
+                const pageItems = getCurrentPageOptions();
+                picked.forEach(function(p) {
+                    const idxInPage = pageItems.indexOf(p);
+                    if (idxInPage >= 0) {
+                        const items = document.querySelectorAll('.option-item');
+                        if (items[idxInPage]) items[idxInPage].classList.add('highlight');
+                    }
+                });
+            }, 100);
 
             const result = document.getElementById('resultText');
             if (result) {
@@ -695,16 +827,28 @@
             const steps = document.getElementById('modalSteps').value.trim();
             if (!name) { alert('名称不能为空'); return; }
 
+            // 重复检测
+            const allOptions = data[currentCategory] || [];
+            const duplicate = allOptions.find(function(o, i) {
+                return o.name === name && i !== editingIndex;
+            });
+            if (duplicate) {
+                if (!confirm('该分类已存在同名选项「' + name + '」，确定要继续添加吗？')) return;
+            }
+
             const newItem = { name: name, ingredients: ingredients, steps: steps };
 
             if (editingIndex >= 0) {
                 data[currentCategory][editingIndex] = newItem;
             } else {
                 data[currentCategory].push(newItem);
-                const totalPages = getTotalPages();
+                const totalPages = Math.ceil((data[currentCategory].length) / PAGE_SIZE);
                 currentPage = totalPages;
             }
 
+            searchKeyword = '';
+            document.getElementById('searchInput').value = '';
+            updateFilteredOptions();
             renderOptions();
             renderPagination();
             clearResult();
@@ -718,11 +862,75 @@
             data[currentCategory].splice(editingIndex, 1);
             const totalPages = getTotalPages();
             if (currentPage > totalPages) currentPage = totalPages;
+            searchKeyword = '';
+            document.getElementById('searchInput').value = '';
+            updateFilteredOptions();
             renderOptions();
             renderPagination();
             clearResult();
             closeModal();
             await saveToCloud();
+        }
+
+        // 导出数据
+        function exportData() {
+            const jsonStr = JSON.stringify(data, null, 2);
+            const blob = new Blob([jsonStr], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = '随机选择器备份_' + new Date().toISOString().slice(0,10) + '.json';
+            a.click();
+            URL.revokeObjectURL(url);
+            setStatus('✅ 已导出备份文件');
+        }
+
+        // 批量导入
+        function openBatchImport() {
+            document.getElementById('batchInput').value = '';
+            document.getElementById('batchModal').classList.add('show');
+            setTimeout(function() { document.getElementById('batchInput').focus(); }, 200);
+        }
+
+        function closeBatchModal() { document.getElementById('batchModal').classList.remove('show'); }
+
+        async function confirmBatchImport() {
+            const raw = document.getElementById('batchInput').value.trim();
+            if (!raw) { alert('请粘贴 JSON 数据'); return; }
+            let imported;
+            try {
+                imported = JSON.parse(raw);
+            } catch(e) {
+                alert('JSON 格式错误，请检查');
+                return;
+            }
+            if (!Array.isArray(imported)) { alert('数据必须是数组格式'); return; }
+
+            let successCount = 0;
+            imported.forEach(function(item) {
+                if (item.name) {
+                    data[currentCategory].push({
+                        name: item.name,
+                        ingredients: item.ingredients || '',
+                        steps: item.steps || ''
+                    });
+                    successCount++;
+                }
+            });
+
+            if (successCount === 0) { alert('没有有效数据被导入'); return; }
+
+            searchKeyword = '';
+            document.getElementById('searchInput').value = '';
+            updateFilteredOptions();
+            const totalPages = getTotalPages();
+            currentPage = totalPages;
+            renderOptions();
+            renderPagination();
+            clearResult();
+            closeBatchModal();
+            await saveToCloud();
+            setStatus('✅ 成功导入 ' + successCount + ' 个选项');
         }
 
         function saveToken() {
@@ -748,6 +956,7 @@
 
         document.getElementById('modalOverlay').addEventListener('click', function(e) { if (e.target === this) closeModal(); });
         document.getElementById('catModal').addEventListener('click', function(e) { if (e.target === this) closeCatModal(); });
+        document.getElementById('batchModal').addEventListener('click', function(e) { if (e.target === this) closeBatchModal(); });
 
         document.getElementById('modalSteps').addEventListener('keydown', function(e) {
             if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) confirmEdit();
